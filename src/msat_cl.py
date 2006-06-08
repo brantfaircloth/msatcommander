@@ -39,11 +39,10 @@ class search:
     
     from string import upper
     
-    def __init__(self, s):
+    def __init__(self):
          
         """Create DNA instance initialized to string s."""
         
-        self.seq = s
         self.repeatUnits = {"mononucleotide":1, "dinucleotide":2, "trinucleotide":3, "tetranucleotide":4}
         self.minSize={"mononucleotide":'{9,}',"dinucleotide":'{6,}',"trinucleotide":'{4,}',"tetranucleotide":'{3,}'} #defines minimum size for repeat unit
         #defines repeat units (lowest alphabetical, unique, non-complementary) for which we are searching
@@ -81,10 +80,11 @@ class search:
             seq = match.group()
             self.msatResults[bases[0]+1] = ('Reverse complement of repeat %s, %s^%s found between bases %s and %s.') % (i, mods().complement(i), length, bases[0]+1, bases[1]+1)
 
-    def ephemeris(self):
+    def ephemeris(self,s ):
         
         """Searches for microsatellite sequences (mononucleotide, dinucleotide, trinucleotide, tetranucleotide) in DNA string"""        
         
+        self.seq = s
         self.msatResults={}                                         # we will store output for each repeat in dictionary keyed on the starting base of repeat
         
         for i in self.mononucleotide:
@@ -190,7 +190,7 @@ def readInfo(files,output,verbose):
         lineEndings=['\r','\n']                             # removes pesky line endings, if present
         for i in lineEndings:
             fileContents=fileContents.replace(i,'')
-        dataOut=search(fileContents).ephemeris()            # runs ephemeris method of search class to find SSRs
+        dataOut=search().ephemeris(fileContents)            # runs ephemeris method of search class to find SSRs
         dictKeys=dataOut.keys()                             # gets keys from dictionary returned from above
         dictKeys.sort()                                     # sorts keys so bp locations will be in order
         file.write(('%s**********************%s**********************%s') % ('\n', fileName, '\n'))
