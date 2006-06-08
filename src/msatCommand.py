@@ -29,7 +29,9 @@ class mods:
     """Class representing DNA as a string sequence.""" 
 
     def complement(self, s):
+            
             """return complementary dna sequence"""
+            
             tab = string.maketrans('AGCTagct','TCGAtcga')
             output = string.translate(s, tab)
             return output
@@ -82,7 +84,7 @@ class search:
         """Searches for microsatellite sequences (mononucleotide, dinucleotide, trinucleotide, tetranucleotide) in DNA string"""        
         
         self.seq = s
-        self.msatResults={}                                         # we will store output for each repeat in dictionary keyed on the starting base of repeat
+        self.msatResults={}                                         # we will store output for each repeat in dictionary keyed on start base #
         
         for i in self.mononucleotide:
             self.genericMethod(i,"mononucleotide")        
@@ -98,11 +100,11 @@ class search:
 def getFiles(directory):
     fileList = [os.path.normcase(f) for f in os.listdir(directory)] # gets file name according to case sensitivity of file system
     fileList=[os.path.join(directory,f) for f in fileList if os.path.isfile(os.path.join(directory, f))]
-                                                                # joins filenames with directory names for local path
-    dsStore=os.path.join(directory, '.DS_Store')                # concats directory and .DS_Store
+                                                                    # joins filenames with directory names for local path
+    dsStore=os.path.join(directory, '.DS_Store')                    # concats directory and .DS_Store
     if dsStore in fileList:
-        fileList.remove(dsStore)                               # removes os x specific .DS_Store files
-    return fileList                                            # returns file list to program
+        fileList.remove(dsStore)                                    # removes os x specific .DS_Store files
+    return fileList                                                 # returns file list to program
 
 def Usage():
     print "microsatFinder [-f] 'input filename' [-o] 'output filename' [-v] verbose mode [-h] help"
@@ -110,7 +112,7 @@ def Usage():
 
 def getUserFiles():
     optlist, list = getopt.getopt(sys.argv[1:], 'f:o:vh')
-    output = ''                                                 # set output to empty
+    output = ''                                                     # set output to empty
     verbose = 'N'
     i=0
     if optlist:
