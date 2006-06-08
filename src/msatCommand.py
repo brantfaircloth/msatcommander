@@ -5,7 +5,7 @@
 # Ephemeris 1.0 for Perl                                                                        |
 # available from http://www.uga.edu/srel/DNA_Lab/ephemeris%201.0.bin.                           |
 #                                                                                               |
-# Copyright (C) 2005 Brant C. Faircloth.  Modifications/recoding conducted solely by            |
+# Copyright (C) 2005-2006 Brant C. Faircloth.  Modifications/recoding conducted solely by       |
 # Brant C. Faircloth in March, 2005 porting program to Python (www.python.org) and recoding     |
 # some parts.                                                                                   |                                                                                    
 #                                                                                               |                                                                             
@@ -26,7 +26,6 @@ import os, string, sys, getopt, re, pdb
        
 class mods: 
     
-    from string import translate
     """Class representing DNA as a string sequence.""" 
 
     def complement(self, s):
@@ -36,8 +35,6 @@ class mods:
             return output
     
 class search:
-    
-    from string import upper
     
     def __init__(self):
          
@@ -73,14 +70,14 @@ class search:
         for match in iterator:
             bases = match.span()                                                # give start/end bases of repeat
             length = (bases[1] - bases[0]) / self.repeatUnits[repeat]           # determine number of repeats for given msat type
-            self.msatResults[bases[0]+1] = ('Repeat %s^%s found between bases %s and %s.') % (i, length, bases[0]+1, bases[1]+1)
+            self.msatResults[bases[0]+1] = ('%s repeat %s^%s found between bases %s and %s.') % (repeat, i, length, bases[0]+1, bases[1]+1)
         for match in compIterator:                                              # do the same on the reverse complement of the sequence
             bases = match.span()
             length = (bases[1] - bases[0]) / self.repeatUnits[repeat]
             seq = match.group()
-            self.msatResults[bases[0]+1] = ('Reverse complement of repeat %s, %s^%s found between bases %s and %s.') % (i, mods().complement(i), length, bases[0]+1, bases[1]+1)
+            self.msatResults[bases[0]+1] = ('Reverse complement of %s repeat %s, %s^%s found between bases %s and %s.') % (repeat, i, mods().complement(i), length, bases[0]+1, bases[1]+1)
 
-    def ephemeris(self,s ):
+    def ephemeris(self, s):
         
         """Searches for microsatellite sequences (mononucleotide, dinucleotide, trinucleotide, tetranucleotide) in DNA string"""        
         
