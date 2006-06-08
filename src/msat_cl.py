@@ -204,7 +204,7 @@ def readInfo(files,output,verbose):
             lineEndings=['\r','\n']                         # removes pesky line endings, if present
             for i in lineEndings:
                 fileContents=fileContents.replace(i,'')
-            dataOut=search(fileContents).ephemeris()        # runs ephemeris method of search class to find SSRs
+            dataOut=search().ephemeris(fileContents)        # runs ephemeris method of search class to find SSRs
             dictKeys=dataOut.keys()                         # gets keys from dictionary returned from above
             dictKeys.sort()                                 # sorts keys so bp locations will be in order
             if verbose == 'Y':
