@@ -22,114 +22,98 @@
 # 02111-1307, USA.                                                                              |
 #-----------------------------------------------------------------------------------------------|
 
-import os, string, sys, getopt, re
-
+import os, string, sys, getopt, re, pdb
+       
 class mods: 
+    
     from string import translate
     """Class representing DNA as a string sequence.""" 
- 
-    def __init__(self, s): 
-        """Create DNA instance initialized to string s.""" 
-        self.seq = s 
-    
-    def complement(self):
-        """return complementary dna sequence"""
-        tab = string.maketrans('AGCTagct','TCGAtcga')
-        output = string.translate(self.seq, tab)
-        return output
+
+    def complement(self, s):
+            """return complementary dna sequence"""
+            tab = string.maketrans('AGCTagct','TCGAtcga')
+            output = string.translate(s, tab)
+            return output
     
 class search:
+    
     from string import upper
-    def __init__(self, s): 
-        """Create DNA instance initialized to string s.""" 
-        self.seq = s        
-    def ephemeris(self):
-        """Searches for microsatellite sequences (mononucleotide, dinucleotide, trinucleotide, tetranucleotide) in DNA string"""
-        min_size={"mono":'{10,}',"di":'{7,}',"tri":'{5,}',"tetra":'{4,}'} #defines minimum size for repeat unit
+    
+    def __init__(self, s):
+         
+        """Create DNA instance initialized to string s."""
+        
+        self.seq = s
+        self.repeatUnits = {"mononucleotide":1, "dinucleotide":2, "trinucleotide":3, "tetranucleotide":4}
+        self.minSize={"mononucleotide":'{9,}',"dinucleotide":'{6,}',"trinucleotide":'{4,}',"tetranucleotide":'{3,}'} #defines minimum size for repeat unit
         #defines repeat units (lowest alphabetical, unique, non-complementary) for which we are searching
-        mononuc=['(A)','(C)'] 
-        dinuc=['(AC)','(AG)','(AT)','(CG)'] 
-        trinuc=['(AAC)','(AAG)','(AAT)','(ACC)','(ACG)','(ACT)','(AGC)','(AGG)','(ATC)','(CCG)']
-        tetranuc=['(AAAC)','(AAAG)','(AAAT)','(AACC)','(AACG)','(AACT)','(AAGC)','(AAGG)','(AAGT)','(ACAG)','(ACAT)','(ACCC)','(ACCG)','(ACCT)','(ACGC)','(ACGT)','(ACTC)','(ACTG)','(AGAT)','(AATC)','(AATG)','(AATT)','(ACGG)','(AGCC)','(AGCG)','(AGGC)','(AGGG)','(ATCC)','(ATCG)','(ATGC)','(CCCG)','(CCGG)']         
-        output={} #we will store output for each repeat type in a dictionary keyed on the starting base of the repeat
-        for i in mononuc:
-            wildcard='[N]*'+i+'+' #must build wildcard string for N bases
-            search_string = i+min_size['mono']+wildcard #concatenates mononuc[i] and minimum size for repeat type
-            test = re.compile(search_string, re.IGNORECASE) #compiles regex for concatenated values
-            iterator = test.finditer(self.seq) #sets up iterative repeat finder
-            iterator2 = test.finditer(mods(self.seq).complement()) #creates complement of sequence to search for complementary repeats
-            for match in iterator:
-                bases = match.span() #give the bases of the repeat
-                length = bases[1]-bases[0] #gives length of repeat, multiplied by 10 here for mononucs
-                output[bases[0]+1]=('Mononucleotide repeat %s^%s found between bases %s and %s.') % (i, length, bases[0]+1, bases[1]+1)
-            for match in iterator2:
-                bases = match.span()
-                length = bases[1]-bases[0]
-                seq=match.group()
-                output[bases[0]+1]=('Reverse complement of mononucleotide repeat %s, (%s)^%s found between bases %s and %s.') % (i, string.upper(mods(seq[0]).complement()), length, bases[0]+1, bases[1]+1)      
-        for i in dinuc:
-            wildcard='[N]*'+i+'+' #must build wildcard string for N bases
-            search_string = i+min_size['di']+wildcard
-            test = re.compile(search_string, re.IGNORECASE)       
-            iterator = test.finditer(self.seq)
-            iterator2 = test.finditer(mods(self.seq).complement())
-            for match in iterator:
-                bases = match.span()
-                length = ((bases[1]-bases[0])/2)
-                output[bases[0]+1]=('Dinucleotide repeat %s^%s found between bases %s and %s.') % (i, length, bases[0]+1, bases[1]+1)
-            for match in iterator2:
-                bases = match.span()
-                length = ((bases[1]-bases[0])/2)
-                seq=match.group()
-                output[bases[0]+1]=('Reverse complement of dinucleotide repeat %s, (%s)^%s found between bases %s and %s.') % (i, string.upper(mods(seq[0:2]).complement()), length, bases[0]+1, bases[1]+1)         
-        for i in trinuc:
-            wildcard='[N]*'+i+'+' #must build wildcard string for N bases
-            search_string = i+min_size['tri']+wildcard
-            test = re.compile(search_string, re.IGNORECASE)       
-            iterator = test.finditer(self.seq)
-            iterator2 = test.finditer(mods(self.seq).complement())
-            for match in iterator:
-                bases = match.span()
-                length = ((bases[1]-bases[0])/3)
-                output[bases[0]+1]=('Trinucleotide repeat %s^%s found between bases %s and %s.') % (i, length, bases[0]+1, bases[1]+1)
-            for match in iterator2:
-                bases = match.span()
-                length = ((bases[1]-bases[0])/3)
-                seq=match.group()
-                output[bases[0]+1]=('Reverse complement of trinucleotide repeat %s, (%s)^%s found between bases %s and %s.') % (i, string.upper(mods(seq[0:3]).complement()), length, bases[0]+1, bases[1]+1)
-        for i in tetranuc:
-            wildcard='[N]*'+i+'+' #must build wildcard string for N bases
-            search_string = i+min_size['tetra']+wildcard
-            test = re.compile(search_string, re.IGNORECASE)       
-            iterator = test.finditer(self.seq)
-            iterator2 = test.finditer(mods(self.seq).complement())
-            for match in iterator:
-                bases = match.span()
-                length = ((bases[1]-bases[0])/4)
-                output[bases[0]+1]=('Tetranucleotide repeat %s^%s found between bases %s and %s.') % (i, length, bases[0]+1, bases[1]+1)
-            for match in iterator2:
-                bases = match.span()
-                length = ((bases[1]-bases[0])/4)
-                seq=match.group()
-                output[bases[0]+1]=('Reverse complement of tetranucleotide repeat %s, (%s)^%s found between bases %s and %s.') % (i, string.upper(mods(seq[0:4]).complement()), length, bases[0]+1, bases[1]+1)
-        return output
+        self.mononucleotide=['(A)','(C)'] 
+        self.dinucleotide=['(AC)','(AG)','(AT)','(CG)'] 
+        self.trinucleotide=['(AAC)','(AAG)','(AAT)','(ACC)','(ACG)','(ACT)','(AGC)','(AGG)','(ATC)','(CCG)']
+        self.tetranucleotide=['(AAAC)','(AAAG)','(AAAT)',
+                            '(AACC)','(AACG)','(AACT)',
+                            '(AAGC)','(AAGG)','(AAGT)',
+                            '(ACAG)','(ACAT)','(ACCC)',
+                            '(ACCG)','(ACCT)','(ACGC)',
+                            '(ACGT)','(ACTC)','(ACTG)',
+                            '(AGAT)','(AATC)','(AATG)',
+                            '(AATT)','(ACGG)','(AGCC)',
+                            '(AGCG)','(AGGC)','(AGGG)',
+                            '(ATCC)','(ATCG)','(ATGC)',
+                            '(CCCG)','(CCGG)']        
+
+    def genericMethod(self, i, repeat):
+        
+        """generic method for finding various microsatellite repeats"""
+        
+        wildcard='[N]*' + i + '+'                                               # build wildcard string for N bases
+        searchString = i + self.minSize[repeat] + wildcard                      # concatenates mononuc[i] and minimum size for repeat type
+        compiledRegEx = re.compile(searchString, re.IGNORECASE)                 # compiles regex for concatenated values
+        iterator = compiledRegEx.finditer(self.seq)                             # sets up iterative repeat finder
+        compIterator = compiledRegEx.finditer(mods().complement(self.seq))
+        for match in iterator:
+            bases = match.span()                                                # give start/end bases of repeat
+            length = (bases[1] - bases[0]) / self.repeatUnits[repeat]           # determine number of repeats for given msat type
+            self.msatResults[bases[0]+1] = ('Repeat %s^%s found between bases %s and %s.') % (i, length, bases[0]+1, bases[1]+1)
+        for match in compIterator:                                              # do the same on the reverse complement of the sequence
+            bases = match.span()
+            length = (bases[1] - bases[0]) / self.repeatUnits[repeat]
+            seq = match.group()
+            self.msatResults[bases[0]+1] = ('Reverse complement of repeat %s, %s^%s found between bases %s and %s.') % (i, mods().complement(i), length, bases[0]+1, bases[1]+1)
+
+    def ephemeris(self):
+        
+        """Searches for microsatellite sequences (mononucleotide, dinucleotide, trinucleotide, tetranucleotide) in DNA string"""        
+        
+        self.msatResults={}                                         # we will store output for each repeat in dictionary keyed on the starting base of repeat
+        
+        for i in self.mononucleotide:
+            self.genericMethod(i,"mononucleotide")        
+        for i in self.dinucleotide:
+            self.genericMethod(i,"dinucleotide")
+        for i in self.trinucleotide:
+            self.genericMethod(i,"trinucleotide")
+        for i in self.tetranucleotide:
+            self.genericMethod(i, "tetranucleotide")
+
+        return self.msatResults
 
 def getFiles(directory):
-    fileList = [os.path.normcase(f) for f in os.listdir(directory)] #gets file name according to case sensitivity of file system
+    fileList = [os.path.normcase(f) for f in os.listdir(directory)] # gets file name according to case sensitivity of file system
     fileList=[os.path.join(directory,f) for f in fileList if os.path.isfile(os.path.join(directory, f))]
-                                                                #joins filenames with directory names for local path
-    dsStore=os.path.join(directory, '.DS_Store')                #concats directory and .DS_Store
+                                                                # joins filenames with directory names for local path
+    dsStore=os.path.join(directory, '.DS_Store')                # concats directory and .DS_Store
     if dsStore in fileList:
-        fileList.remove(dsStore)                               #removes os x specific .DS_Store files
-    return fileList                                            #returns file list to program
+        fileList.remove(dsStore)                               # removes os x specific .DS_Store files
+    return fileList                                            # returns file list to program
 
 def Usage():
-    print "microsat_finder [-f] 'input filename' [-o] 'output filename' [-v] verbose mode [-h] help"
+    print "microsatFinder [-f] 'input filename' [-o] 'output filename' [-v] verbose mode [-h] help"
     sys.exit()
 
 def getUserFiles():
     optlist, list = getopt.getopt(sys.argv[1:], 'f:o:vh')
-    output = ''                                                 #set output to empty
+    output = ''                                                 # set output to empty
     verbose = 'N'
     i=0
     if optlist:
@@ -144,8 +128,8 @@ def getUserFiles():
                 Usage()
             i+=1
         try:
-            input = os.path.abspath(string.strip(input))        #have to strip whitespace characters for dragging folders
-            fileList=getFiles(input)                            #calls function above
+            input = os.path.abspath(string.strip(input))        # have to strip whitespace characters for dragging folders
+            fileList=getFiles(input)                            # calls function above
         except:
             print 'No directory found, assuming single file input'
             fileList=input
@@ -160,7 +144,7 @@ def getUserFiles():
                 sys.exit()
         print ('\nOutput file written to %s') % (os.path.abspath(output))
     else:
-        print 'Microsat finder v0.1, Copyright (2005) Brant C. Faircloth.  Microsat finder comes with ABSOLUTELY NO WARRANTY; for details type show w.  This is free software, and you are welcome to redistribute it under certain conditions; type show c for details.\n'
+        print 'microsatFinder v0.2, Copyright (2006) Brant C. Faircloth.  Microsat finder comes with ABSOLUTELY NO WARRANTY; for details type show w.  This is free software, and you are welcome to redistribute it under certain conditions; type show c for details.\n'
         license = raw_input('For GPL license or conditions, type \'show w\' or \'show c\' (Enter for \'no\'):  ')
         if license == 'show c':
             f=open('gpl.txt','r')
@@ -177,8 +161,8 @@ def getUserFiles():
         else:
             input = raw_input('\nEnter absolute/relative path to directory containing sequence files or option from above:  ')
             try:
-                input = os.path.abspath(string.strip(input))        #have to strip whitespace characters for dragging folders
-                fileList=getFiles(input)                            #calls function above
+                input = os.path.abspath(string.strip(input))        # have to strip whitespace characters for dragging folders
+                fileList=getFiles(input)                            # calls function above
             except:
                 print 'The directory containing sequence files does not exist '
                 return 0
@@ -197,39 +181,39 @@ def getUserFiles():
     return fileList, output, verbose
     
 def readInfo(files,output,verbose):
-    file=open(output,'a') #opens file for output - append only to keep from overwriting
+    file=open(output,'a')                                   # opens file for output - append only to keep from overwriting
     file.write('Microsatellite repeats found in the following sequences: \n')
-    if type(files) == str:       #for single file entries
+    if type(files) == str:                                  # for single file entries
         fileName=files
-        f=open(fileName,'r') #opens files to read
-        fileContents=f.read() #reads the bad boys
-        lineEndings=['\r','\n'] #removes pesky line endings, if present
+        f=open(fileName,'r')                                # opens files to read
+        fileContents=f.read()                               # reads the bad boys
+        lineEndings=['\r','\n']                             # removes pesky line endings, if present
         for i in lineEndings:
             fileContents=fileContents.replace(i,'')
-        dataOut=search(fileContents).ephemeris() #runs ephemeris method of search class to find SSRs
-        dictKeys=dataOut.keys() #gets keys from dictionary returned from above
-        dictKeys.sort() #sorts keys so bp locations will be in order
+        dataOut=search(fileContents).ephemeris()            # runs ephemeris method of search class to find SSRs
+        dictKeys=dataOut.keys()                             # gets keys from dictionary returned from above
+        dictKeys.sort()                                     # sorts keys so bp locations will be in order
         file.write(('%s**********************%s**********************%s') % ('\n', fileName, '\n'))
-        for k in dictKeys: #writes dict values for sorted keys to output file
+        for k in dictKeys:                                  # writes dict values for sorted keys to output file
             file.write(('%s %s') % (dataOut[k], '\n'))
     else:
         for i in files:
             fileName=i
-            f=open(i,'r') #opens files to read
-            fileContents=f.read() #reads the bad boys
-            lineEndings=['\r','\n'] #removes pesky line endings, if present
+            f=open(i,'r')                                   # opens files to read
+            fileContents=f.read()                           # reads the bad boys
+            lineEndings=['\r','\n']                         # removes pesky line endings, if present
             for i in lineEndings:
                 fileContents=fileContents.replace(i,'')
-            dataOut=search(fileContents).ephemeris() #runs ephemeris method of search class to find SSRs
-            dictKeys=dataOut.keys() #gets keys from dictionary returned from above
-            dictKeys.sort() #sorts keys so bp locations will be in order
+            dataOut=search(fileContents).ephemeris()        # runs ephemeris method of search class to find SSRs
+            dictKeys=dataOut.keys()                         # gets keys from dictionary returned from above
+            dictKeys.sort()                                 # sorts keys so bp locations will be in order
             if verbose == 'Y':
                 print (('%s**********************%s**********************%s') % ('\n', fileName, '\n'))
             file.write(('%s**********************%s**********************%s') % ('\n', fileName, '\n'))
             if verbose =='Y':
-                for k in dictKeys: #writes dict values for sorted keys to output file
+                for k in dictKeys:                          # writes dict values for sorted keys to output file
                     print (('%s %s') % (dataOut[k], '\n'))
-            for k in dictKeys: #writes dict values for sorted keys to output file
+            for k in dictKeys:                              # writes dict values for sorted keys to output file
                 file.write(('%s %s') % (dataOut[k], '\n'))
     file.close()
 
