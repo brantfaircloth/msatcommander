@@ -199,43 +199,10 @@ def readInfo(output):
         dictKeys=dataOut.keys()
         dictKeys.sort()                                     # sorts keys so bp locations will be in order
         if dictKeys:
-            file.write(('%s>>%s %s') % ('\n', record.title, '\n'))
+            #file.write(('%s>>%s %s') % ('\n', record.title, '\n'))
             for k in dictKeys:                                  # writes dict values for sorted keys to output file
-                file.write(('%s %s') % (dataOut[k], '\n'))
-            file.write(('%s---------------------------------------%s') % ('\n','\n'))
+                dataList = dataOut[k].split()
+                file.write(('%s\t%s\t%s\t%s\n') % (record.title, ' '.join(dataList[:-7]), dataList[-7], ' '.join(dataList[-6:])))
+            file.write(('---------------------------------------%s') % ('\n'))
 
-#    if type(files) == str:                                  # for single file entries
-#        fileName=files
-#        f=open(fileName,'r')                                # opens files to read
-#        fileContents=f.read()                               # reads the bad boys
-#        lineEndings=['\r','\n']                             # removes pesky line endings, if present
-#        for i in lineEndings:
-#            fileContents=fileContents.replace(i,'')
-#        dataOut=search().ephemeris(fileContents)            # runs ephemeris method of search class to find SSRs
-#        dictKeys=dataOut.keys()                             # gets keys from dictionary returned from above
-#       dictKeys.sort()                                     # sorts keys so bp locations will be in order
-#       for k in dictKeys:                                  # writes dict values for sorted keys to output file
-#            file.write(('%s %s') % (dataOut[k], '\n'))
-#    else:
-#        for i in files:
-#            fileName=i
-#           f=open(i,'r')                                   # opens files to read
-#            fileContents=f.read()                           # reads the bad boys
-#            lineEndings=['\r','\n']                         # removes pesky line endings, if present
-#            for i in lineEndings:
-#                fileContents=fileContents.replace(i,'')
-#            dataOut=search().ephemeris(fileContents)        # runs ephemeris method of search class to find SSRs
-#            dictKeys=dataOut.keys()                         # gets keys from dictionary returned from above
-#            dictKeys.sort()                                 # sorts keys so bp locations will be in order
-#            if verbose == 'Y':
-#                print (('%s**********************%s**********************%s') % ('\n', fileName, '\n'))
-#            file.write(('%s**********************%s**********************%s') % ('\n', fileName, '\n'))
-#            if verbose =='Y':
-#                for k in dictKeys:                          # writes dict values for sorted keys to output file
-#                    print (('%s %s') % (dataOut[k], '\n'))
-#           for k in dictKeys:                              # writes dict values for sorted keys to output file
-#               file.write(('%s %s') % (dataOut[k], '\n'))
-#   file.close()
-
-#files=getUserFiles()
 readInfo("glennTest.txt")
