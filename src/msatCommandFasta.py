@@ -42,28 +42,112 @@ class search:
          
         """Create DNA instance initialized to string s."""
         
-        self.repeatUnits = {"mononucleotide":1, "dinucleotide":2, "trinucleotide":3, "tetranucleotide":4}
-        self.minSize={"mononucleotide":'{9,}',"dinucleotide":'{6,}',"trinucleotide":'{4,}',"tetranucleotide":'{3,}'} #defines minimum size for repeat unit
+        self.repeatUnits = {"mononucleotide":1, "dinucleotide":2, "trinucleotide":3, "tetranucleotide":4, "pentanucleotide":5, "hexanucleotide":6}
+        self.minSize={"mononucleotide":'{9,}',"dinucleotide":'{6,}',"trinucleotide":'{4,}',"tetranucleotide":'{3,}', "pentanucleotide":'{3,}', "hexanucleotide":'{3,}'} #defines minimum size for repeat unit
         #defines repeat units (lowest alphabetical, unique, non-complementary) for which we are searching
         self.mononucleotide=['(A)','(C)'] 
         self.dinucleotide=['(AC)','(AG)','(AT)','(CG)'] 
-        self.trinucleotide=['(AAC)','(AAG)','(AAT)','(ACC)','(ACG)','(ACT)','(AGC)','(AGG)','(ATC)','(CCG)']
-        self.tetranucleotide=['(AAAC)','(AAAG)','(AAAT)',
-                            '(AACC)','(AACG)','(AACT)',
-                            '(AAGC)','(AAGG)','(AAGT)',
-                            '(ACAG)','(ACAT)','(ACCC)',
-                            '(ACCG)','(ACCT)','(ACGC)',
-                            '(ACGT)','(ACTC)','(ACTG)',
-                            '(AGAT)','(AATC)','(AATG)',
-                            '(AATT)','(ACGG)','(AGCC)',
-                            '(AGCG)','(AGGC)','(AGGG)',
-                            '(ATCC)','(ATCG)','(ATGC)',
-                            '(CCCG)','(CCGG)']        
+        self.trinucleotide=['(AAC)','(AAG)','(AAT)',
+                            '(ACC)','(ACG)','(ACT)',
+                            '(AGC)','(AGG)','(ATC)',
+                            '(CCG)']
+                            
+        self.tetranucleotide=['(AAAC)','(AAAG)','(AAAT)','(AACC)',
+                            '(AACG)','(AACT)','(AAGC)','(AAGG)',
+                            '(AAGT)','(ACAG)','(ACAT)','(ACCC)',
+                            '(ACCG)','(ACCT)','(ACGC)','(ACGT)',
+                            '(ACTC)','(ACTG)','(AGAT)','(AATC)',
+                            '(AATG)','(AATT)','(ACGG)','(AGCC)',
+                            '(AGCG)','(AGGC)','(AGGG)','(ATCC)',
+                            '(ATCG)','(ATGC)','(CCCG)','(CCGG)']
+        
+        self.pentanucleotide=['(AAAAC)', '(AAAAG)', '(AAAAT)', '(AAACC)', '(AAACG)', 
+                            '(AAACT)', '(AAAGC)', '(AAAGG)', '(AAAGT)', '(AAATC)', 
+                            '(AAATG)', '(AAATT)', '(AACAC)', '(AACAG)', '(AACAT)', 
+                            '(AACCC)', '(AACCG)', '(AACCT)', '(AACGC)', '(AACGG)',
+                            '(AACGT)', '(AACTC)', '(AACTG)', '(AACTT)', '(AAGAC)',
+                            '(AAGAG)', '(AAGAT)', '(AAGCC)', '(AAGCG)', '(AAGCT)',
+                            '(AAGGC)', '(AAGGG)', '(AAGGT)', '(AAGTC)', '(AAGTG)', 
+                            '(AATAC)', '(AATAG)', '(AATAT)', '(AATCC)', '(AATCG)', 
+                            '(AATCT)', '(AATGC)', '(AATGG)', '(AATGT)', '(AATTC)', 
+                            '(ACACC)', '(ACACG)', '(ACACT)', '(ACAGC)', '(ACAGG)', 
+                            '(ACAGT)', '(ACATC)', '(ACATG)', '(ACCAG)', '(ACCAT)', 
+                            '(ACCCC)', '(ACCCG)', '(ACCCT)', '(ACCGC)', '(ACCGG)', 
+                            '(ACCGT)', '(ACCTC)', '(ACCTG)', '(ACGAG)', '(ACGAT)', 
+                            '(ACGCC)', '(ACGCG)', '(ACGCT)', '(ACGGC)', '(ACGGG)', 
+                            '(ACGTC)', '(ACTAG)', '(ACTAT)', '(ACTCC)', '(ACTCG)', 
+                            '(ACTCT)', '(ACTGC)', '(ACTGG)', '(AGAGC)', '(AGAGG)', 
+                            '(AGATC)', '(AGATG)', '(AGCAT)', '(AGCCC)', '(AGCCG)', 
+                            '(AGCCT)', '(AGCGC)', '(AGCGG)', '(AGCTC)', '(AGGAT)', 
+                            '(AGGCC)', '(AGGCG)', '(AGGGC)', '(AGGGG)', '(ATATC)', 
+                            '(ATCCC)', '(ATCCG)', '(ATCGC)', '(ATGCC)', '(CCCCG)', 
+                            '(CCCGG)', '(CCGCG)']
+                            
+        self.hexanucleotide=['(AAAAAC)', '(AAAAAG)', '(AAAAAT)', '(AAAACC)', '(AAAACG)', '(AAAACT)', 
+                            '(AAAAGC)', '(AAAAGG)', '(AAAAGT)', '(AAAATC)', '(AAAATG)', '(AAAATT)',
+                            '(AAACAC)', '(AAACAG)', '(AAACAT)', '(AAACCC)', '(AAACCG)', '(AAACCT)',
+                            '(AAACGC)', '(AAACGG)', '(AAACGT)', '(AAACTC)', '(AAACTG)', '(AAACTT)', 
+                            '(AAAGAC)', '(AAAGAG)', '(AAAGAT)', '(AAAGCC)', '(AAAGCG)', '(AAAGCT)', 
+                            '(AAAGGC)', '(AAAGGG)', '(AAAGGT)', '(AAAGTC)', '(AAAGTG)', '(AAAGTT)', 
+                            '(AAATAC)', '(AAATAG)', '(AAATAT)', '(AAATCC)', '(AAATCG)', '(AAATCT)', 
+                            '(AAATGC)', '(AAATGG)', '(AAATGT)', '(AAATTC)', '(AAATTG)', '(AAATTT)', 
+                            '(AACAAG)', '(AACAAT)', '(AACACC)', '(AACACG)', '(AACACT)', '(AACAGC)', 
+                            '(AACAGG)', '(AACAGT)', '(AACATC)', '(AACATG)', '(AACATT)', '(AACCAC)', 
+                            '(AACCAG)', '(AACCAT)', '(AACCCC)', '(AACCCG)', '(AACCCT)', '(AACCGC)', 
+                            '(AACCGG)', '(AACCGT)', '(AACCTC)', '(AACCTG)', '(AACCTT)', '(AACGAC)', 
+                            '(AACGAG)', '(AACGAT)', '(AACGCC)', '(AACGCG)', '(AACGCT)', '(AACGGC)', 
+                            '(AACGGG)', '(AACGGT)', '(AACGTC)', '(AACGTG)', '(AACGTT)', '(AACTAC)', 
+                            '(AACTAG)', '(AACTAT)', '(AACTCC)', '(AACTCG)', '(AACTCT)', '(AACTGC)', 
+                            '(AACTGG)', '(AACTGT)', '(AACTTC)', '(AACTTG)', '(AAGAAT)', '(AAGACC)', 
+                            '(AAGACG)', '(AAGACT)', '(AAGAGC)', '(AAGAGG)', '(AAGAGT)', '(AAGATC)', 
+                            '(AAGATG)', '(AAGATT)', '(AAGCAC)', '(AAGCAG)', '(AAGCAT)', '(AAGCCC)', 
+                            '(AAGCCG)', '(AAGCCT)', '(AAGCGC)', '(AAGCGG)', '(AAGCGT)', '(AAGCTC)', 
+                            '(AAGCTG)', '(AAGCTT)', '(AAGGAC)', '(AAGGAG)', '(AAGGAT)', '(AAGGCC)', 
+                            '(AAGGCG)', '(AAGGCT)', '(AAGGGC)', '(AAGGGG)', '(AAGGGT)', '(AAGGTC)', 
+                            '(AAGGTG)', '(AAGTAC)', '(AAGTAG)', '(AAGTAT)', '(AAGTCC)', '(AAGTCG)', 
+                            '(AAGTCT)', '(AAGTGC)', '(AAGTGG)', '(AAGTGT)', '(AATACC)', '(AATACG)', 
+                            '(AATACT)', '(AATAGC)', '(AATAGG)', '(AATAGT)', '(AATATC)', '(AATATG)', 
+                            '(AATATT)', '(AATCAC)', '(AATCAG)', '(AATCAT)', '(AATCCC)', '(AATCCG)', 
+                            '(AATCCT)', '(AATCGC)', '(AATCGG)', '(AATCGT)', '(AATCTC)', '(AATCTG)', 
+                            '(AATGAC)', '(AATGAG)', '(AATGAT)', '(AATGCC)', '(AATGCG)', '(AATGCT)', 
+                            '(AATGGC)', '(AATGGG)', '(AATGGT)', '(AATGTC)', '(AATGTG)', '(AATTAC)', 
+                            '(AATTAG)', '(AATTAT)', '(AATTCC)', '(AATTCG)', '(AATTGC)', '(ACACAG)', 
+                            '(ACACAT)', '(ACACCC)', '(ACACCG)', '(ACACCT)', '(ACACGC)', '(ACACGG)', 
+                            '(ACACGT)', '(ACACTC)', '(ACACTG)', '(ACAGAG)', '(ACAGAT)', '(ACAGCC)', 
+                            '(ACAGCG)', '(ACAGCT)', '(ACAGGC)', '(ACAGGG)', '(ACAGGT)', '(ACAGTC)', 
+                            '(ACAGTG)', '(ACATAG)', '(ACATAT)', '(ACATCC)', '(ACATCG)', '(ACATCT)', 
+                            '(ACATGC)', '(ACATGG)', '(ACATGT)', '(ACCACG)', '(ACCACT)', '(ACCAGC)', 
+                            '(ACCAGG)', '(ACCAGT)', '(ACCATC)', '(ACCATG)', '(ACCCAG)', '(ACCCAT)', 
+                            '(ACCCCC)', '(ACCCCG)', '(ACCCCT)', '(ACCCGC)', '(ACCCGG)', '(ACCCGT)', 
+                            '(ACCCTC)', '(ACCCTG)', '(ACCGAG)', '(ACCGAT)', '(ACCGCC)', '(ACCGCG)', 
+                            '(ACCGCT)', '(ACCGGC)', '(ACCGGG)', '(ACCGGT)', '(ACCGTC)', '(ACCGTG)', 
+                            '(ACCTAG)', '(ACCTAT)', '(ACCTCC)', '(ACCTCG)', '(ACCTCT)', '(ACCTGC)', 
+                            '(ACCTGG)', '(ACGACT)', '(ACGAGC)', '(ACGAGG)', '(ACGAGT)', '(ACGATC)', 
+                            '(ACGATG)', '(ACGCAG)', '(ACGCAT)', '(ACGCCC)', '(ACGCCG)', '(ACGCCT)', 
+                            '(ACGCGC)', '(ACGCGG)', '(ACGCGT)', '(ACGCTC)', '(ACGCTG)', '(ACGGAG)', 
+                            '(ACGGAT)', '(ACGGCC)', '(ACGGCG)', '(ACGGCT)', '(ACGGGC)', '(ACGGGG)', 
+                            '(ACGTAG)', '(ACGTAT)', '(ACGTCC)', '(ACGTCG)', '(ACGTGC)', '(ACTAGC)', 
+                            '(ACTAGG)', '(ACTAGT)', '(ACTATC)', '(ACTATG)', '(ACTCAG)', '(ACTCAT)', 
+                            '(ACTCCC)', '(ACTCCG)', '(ACTCCT)', '(ACTCGC)', '(ACTCGG)', '(ACTCTC)', 
+                            '(ACTCTG)', '(ACTGAG)', '(ACTGAT)', '(ACTGCC)', '(ACTGCG)', '(ACTGCT)', 
+                            '(ACTGGC)', '(ACTGGG)', '(AGAGAT)', '(AGAGCC)', '(AGAGCG)', '(AGAGCT)', 
+                            '(AGAGGC)', '(AGAGGG)', '(AGATAT)', '(AGATCC)', '(AGATCG)', '(AGATCT)', 
+                            '(AGATGC)', '(AGATGG)', '(AGCAGG)', '(AGCATC)', '(AGCATG)', '(AGCCAT)', 
+                            '(AGCCCC)', '(AGCCCG)', '(AGCCCT)', '(AGCCGC)', '(AGCCGG)', '(AGCCTC)', 
+                            '(AGCCTG)', '(AGCGAT)', '(AGCGCC)', '(AGCGCG)', '(AGCGCT)', '(AGCGGC)', 
+                            '(AGCGGG)', '(AGCTAT)', '(AGCTCC)', '(AGCTCG)', '(AGCTGC)', '(AGGATC)', 
+                            '(AGGATG)', '(AGGCAT)', '(AGGCCC)', '(AGGCCG)', '(AGGCCT)', '(AGGCGC)', 
+                            '(AGGCGG)', '(AGGGAT)', '(AGGGCC)', '(AGGGCG)', '(AGGGGC)', '(AGGGGG)', 
+                            '(ATATCC)', '(ATATCG)', '(ATATGC)', '(ATCATG)', '(ATCCCC)', '(ATCCCG)', 
+                            '(ATCCGC)', '(ATCCGG)', '(ATCGCC)', '(ATCGCG)', '(ATCGGC)', '(ATGCCC)', 
+                            '(ATGCGC)', '(ATGGCC)', '(CCCCCG)', '(CCCCGG)', '(CCCGCG)', '(CCCGGG)', 
+                            '(CCGCGG)', '(CCGGCG)']        
 
     def genericMethod(self, i, repeat):
         
         """generic method for finding various microsatellite repeats"""
         
+        print (("Finding repeats of size %s....\n") % (repeat))
         wildcard='[N]*' + i + '+'                                               # build wildcard string for N bases
         searchString = i + self.minSize[repeat] + wildcard                      # concatenates mononuc[i] and minimum size for repeat type
         compiledRegEx = re.compile(searchString, re.IGNORECASE)                 # compiles regex for concatenated values
@@ -94,6 +178,10 @@ class search:
             self.genericMethod(i,"trinucleotide")
         for i in self.tetranucleotide:
             self.genericMethod(i, "tetranucleotide")
+        for i in self.pentanucleotide:
+            self.genericMethod(i, "pentanucleotide")
+        for i in self.hexanucleotide:
+            self.genericMethod(i, "hexanucleotide")
 
         return self.msatResults
 
@@ -187,7 +275,7 @@ def readInfo(output):
     file.write('Microsatellite repeats found in the following sequences: \n\n')
 
     parser = Fasta.RecordParser()
-    infile = open('/Users/bcf/svn_working/msatFinder/trunk/test/SREL_ESTs_1_50_Sequencher_output.TXT')
+    infile = open('/Users/bcf/svn_working/msatFinder/trunk/test/FASTA_Placental Seqs_BW.txt')
     iterator = Fasta.Iterator(infile, parser)
     while 1:
         record = iterator.next()
