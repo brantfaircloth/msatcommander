@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 #-----------------------------------------------------------------------------------------------|
 # MicrosatFinder - command line version for Python:  an update to N. Dean Pentcheff's           |
@@ -22,8 +22,79 @@
 # 02111-1307, USA.                                                                              |
 #-----------------------------------------------------------------------------------------------|
 
-import os, string, sys, getopt, re, pdb
+import os, string, sys, getopt, re
+
+try:
+    from Bio import Fasta
+except:
+    print "This program requires BioPython (http://biopython.org/) to be installed."
        
+class progressBar:
+    """ Creates a text-based progress bar. Call the object with the `print'
+        command to see the progress bar, which looks something like this:
+            
+        [=======>        22%                  ]
+        
+        You may specify the progress bar's width, min and max values on init.
+    """
+
+    def __init__(self, minValue = 0, maxValue = 100, totalWidth=80):
+        self.progBar = "[]"   # This holds the progress bar string
+        self.min = minValue
+        self.max = maxValue
+        self.span = maxValue - minValue
+        self.width = totalWidth
+        self.amount = 0       # When amount == max, we are 100% done 
+        self.updateAmount(0)  # Build progress bar string
+
+    def updateAmount(self, newAmount = 0):
+        """ Update the progress bar with the new amount (with min and max
+            values set at initialization; if it is over or under, it takes the
+            min or max value as a default. """
+        if newAmount < self.min: newAmount = self.min
+        if newAmount > self.max: newAmount = self.max
+        self.amount = newAmount
+
+        # Figure out the new percent done, round to an integer
+        diffFromMin = float(self.amount - self.min)
+        percentDone = (diffFromMin / float(self.span)) * 100.0
+        percentDone = int(round(percentDone))
+
+        # Figure out how many hash bars the percentage should be
+        allFull = self.width - 2
+        numHashes = (percentDone / 100.0) * allFull
+        numHashes = int(round(numHashes))
+
+        # Build a progress bar with an arrow of equal signs; special cases for
+        # empty and full
+        if numHashes == 0:
+            self.progBar = "[>%s]" % (' '*(allFull-1))
+        elif numHashes == allFull:
+            self.progBar = "[%s]" % ('='*allFull)
+        else:
+            self.progBar = "[%s>%s]" % ('='*(numHashes-1),
+                                        ' '*(allFull-numHashes))
+
+        # figure out where to put the percentage, roughly centered
+        percentPlace = (len(self.progBar) / 2) - len(str(percentDone)) 
+        percentString = str(percentDone) + "%"
+
+        # slice the percentage into the bar
+        self.progBar = ''.join([self.progBar[0:percentPlace], percentString,
+                                self.progBar[percentPlace+len(percentString):]
+                                ])
+
+    def __str__(self):
+        return str(self.progBar)
+
+    def __call__(self, value):
+        """ Updates the amount, and writes to stdout. Prints a carriage return
+            first, so it will overwrite the current line in stdout."""
+        print '\r',
+        self.updateAmount(value)
+        sys.stdout.write(str(self))
+        sys.stdout.flush()
+
 class mods: 
     
     """Class representing DNA as a string sequence.""" 
@@ -46,7 +117,10 @@ class search:
         self.minSize={"mononucleotide":'{9,}',"dinucleotide":'{6,}',"trinucleotide":'{4,}',"tetranucleotide":'{3,}', "pentanucleotide":'{3,}', "hexanucleotide":'{3,}'} #defines minimum size for repeat unit
         #defines repeat units (lowest alphabetical, unique, non-complementary) for which we are searching
         self.mononucleotide=['(A)','(C)'] 
-        self.dinucleotide=['(AC)','(AG)','(AT)','(CG)'] 
+        
+        self.dinucleotide=['(AC)','(AG)',
+                            '(AT)','(CG)'] 
+        
         self.trinucleotide=['(AAC)','(AAG)','(AAT)',
                             '(ACC)','(ACG)','(ACT)',
                             '(AGC)','(AGG)','(ATC)',
@@ -147,7 +221,7 @@ class search:
         
         """generic method for finding various microsatellite repeats"""
         
-        print (("Finding repeats of size %s....\n") % (repeat))
+        #print (("Finding repeats of size %s....\n") % (repeat))
         wildcard='[N]*' + i + '+'                                               # build wildcard string for N bases
         searchString = i + self.minSize[repeat] + wildcard                      # concatenates mononuc[i] and minimum size for repeat type
         compiledRegEx = re.compile(searchString, re.IGNORECASE)                 # compiles regex for concatenated values
@@ -163,127 +237,129 @@ class search:
             seq = match.group()
             self.msatResults[bases[0]+1] = ('Reverse complement of %s repeat %s, %s^%s found between bases %s and %s.') % (repeat, i, mods().complement(i), length, bases[0]+1, bases[1]+1)
 
-    def ephemeris(self, s):
+    def ephemeris(self, s, type):
         
         """Searches for microsatellite sequences (mononucleotide, dinucleotide, trinucleotide, tetranucleotide) in DNA string"""        
         
         self.seq = s
-        self.msatResults={}                                         # we will store output for each repeat in dictionary keyed on start base #
+        self.msatResults={}                                 # we will store output for each repeat in dictionary keyed on start base #
         
-        for i in self.mononucleotide:
-            self.genericMethod(i,"mononucleotide")        
-        for i in self.dinucleotide:
-            self.genericMethod(i,"dinucleotide")
-        for i in self.trinucleotide:
-            self.genericMethod(i,"trinucleotide")
-        for i in self.tetranucleotide:
-            self.genericMethod(i, "tetranucleotide")
-        for i in self.pentanucleotide:
-            self.genericMethod(i, "pentanucleotide")
-        for i in self.hexanucleotide:
-            self.genericMethod(i, "hexanucleotide")
+        if type == 'tetra':
+            for repeatClass in ['self.mononucleotide','self.dinucleotide', 'self.trinucleotide', 'self.tetranucleotide']:
+                for i in repeatClass:
+                    self.genericMethod(i,repeatClass.lstrip('self.'))        
+            #for i in self.dinucleotide:
+            #    self.genericMethod(i,"dinucleotide")
+            #for i in self.trinucleotide:
+            #    self.genericMethod(i,"trinucleotide")
+            #for i in self.tetranucleotide:
+            #    self.genericMethod(i, "tetranucleotide")
+        elif type == 'penta':
+            for repeatClass in ['self.mononucleotide','self.dinucleotide', 'self.trinucleotide', 'self.tetranucleotide', 'self.pentanucleotide']:
+                for i in repeatClass:
+                    self.genericMethod(i,repeatClass.lstrip('self.'))
+            #for i in self.mononucleotide:
+            #    self.genericMethod(i,"mononucleotide")        
+            #for i in self.dinucleotide:
+            #    self.genericMethod(i,"dinucleotide")
+            #for i in self.trinucleotide:
+            #    self.genericMethod(i,"trinucleotide")
+            #for i in self.tetranucleotide:
+            #   self.genericMethod(i, "tetranucleotide")
+            #for i in self.pentanucleotide:
+            #    self.genericMethod(i, "pentanucleotide")
+        else:
+            for repeatClass in ['self.mononucleotide','self.dinucleotide', 'self.trinucleotide', 'self.tetranucleotide', 'self.pentanucleotide', self.hexanucleotide]:
+                for i in repeatClass:
+                    self.genericMethod(i,repeatClass.lstrip('self.'))
+            #for i in self.mononucleotide:
+            #    self.genericMethod(i,"mononucleotide")        
+            #for i in self.dinucleotide:
+            #    self.genericMethod(i,"dinucleotide")
+            #for i in self.trinucleotide:
+            #    self.genericMethod(i,"trinucleotide")
+            #for i in self.tetranucleotide:
+            #   self.genericMethod(i, "tetranucleotide")
+            #for i in self.pentanucleotide:
+            #    self.genericMethod(i, "pentanucleotide")
+            #for i in self.hexanucleotide:
+            #    self.genericMethod(i, "hexanucleotide")
 
         return self.msatResults
 
-def getFiles(directory):
-    fileList = [os.path.normcase(f) for f in os.listdir(directory)] # gets file name according to case sensitivity of file system
-    fileList=[os.path.join(directory,f) for f in fileList if os.path.isfile(os.path.join(directory, f))]
-                                                                    # joins filenames with directory names for local path
-    dsStore=os.path.join(directory, '.DS_Store')                    # concats directory and .DS_Store
-    if dsStore in fileList:
-        fileList.remove(dsStore)                                    # removes os x specific .DS_Store files
-    return fileList                                                 # returns file list to program
-
 def Usage():
-    print "microsatFinder [-f] 'input filename' [-o] 'output filename' [-v] verbose mode [-h] help"
+    print "microsatFinder [-i] 'input filename' [-o] 'output filename' [-s] 'search type (tetra | penta | hexa)' [-h] help"
     sys.exit()
 
 def getUserFiles():
-    optlist, list = getopt.getopt(sys.argv[1:], 'f:o:vh')
+    optlist, list = getopt.getopt(sys.argv[1:], 'i:o:s:vh')
     output = ''                                                     # set output to empty
-    verbose = 'N'
+    searchType = 'hexa'                                             #set default search to hexanucleotide (e.g. all)
     i=0
     if optlist:
         for opt in optlist:
-            if optlist[i][0] == '-f':
-                input=optlist[i][1]
+            if optlist[i][0] == '-i':
+                inFile=optlist[i][1]
             elif optlist[i][0] == '-o':
-                output=optlist[i][1]
-            elif optlist[i][0] == '-v':
-                verbose='Y'
+                outFile=optlist[i][1]
+            elif optlist[i][0] == '-s':
+                searchType=optlist[i][1]
             elif optlist[i][0] == '-h':
                 Usage()
             i+=1
         try:
-            input = os.path.abspath(string.strip(input))        # have to strip whitespace characters for dragging folders
-            fileList=getFiles(input)                            # calls function above
+            inFile = os.path.abspath(string.strip(inFile))        # have to strip whitespace characters for dragging folders
+            #fileList=getFiles(input)                            # calls function above
         except:
-            print 'No directory found, assuming single file input'
-            fileList=input
-            output=os.path.join(os.path.dirname(input),'output.txt')
+            print 'File/Directory does not exist!'
+            sys.exit()
+        if searchType in ['tetra','penta','hexa']:
+                print (('\nYou are searching for all %sNUCLEOTIDE and smaller repeats.') % (searchType.upper()))
+        else:
+            print "Please choose 'tetra'|'penta'|'hexa' or leave blank for the default (hexa).\n"
+            sys.exit()
         if not output:
-            output=os.path.join(input,'output.txt')
+            outFile=os.path.join(os.path.dirname(inFile),'output.txt')
         else:
             try:
-                os.path.isdir(os.path.dirname(os.path.abspath(output)))
+                os.path.isdir(os.path.dirname(os.path.abspath(outFile)))
             except:
                 print 'This is not a valid path.  Make sure you have entered the path correctly.'
                 sys.exit()
-        print ('\nOutput file written to %s') % (os.path.abspath(output))
+        print ('\nOutput file written to %s.\n') % (os.path.abspath(outFile))
+    
     else:
-        print 'microsatFinder v0.2, Copyright (2006) Brant C. Faircloth.  Microsat finder comes with ABSOLUTELY NO WARRANTY; for details type show w.  This is free software, and you are welcome to redistribute it under certain conditions; type show c for details.\n'
-        license = raw_input('For GPL license or conditions, type \'show w\' or \'show c\' (Enter for \'no\'):  ')
-        if license == 'show c':
-            f=open('gpl.txt','r')
-            gplContents=f.read()
-            print gplContents
-            print '\n\n'
-            f.close()
-        elif license == 'show w':
-            f=open('NO_WARRANTY.txt','r')
-            gplWarranty=f.read()
-            print gplWarranty
-            print '\n\n'
-            f.close()
-        else:
-            input = raw_input('\nEnter absolute/relative path to directory containing sequence files or option from above:  ')
-            try:
-                input = os.path.abspath(string.strip(input))        # have to strip whitespace characters for dragging folders
-                fileList=getFiles(input)                            # calls function above
-            except:
-                print 'The directory containing sequence files does not exist '
-                return 0
-        output = raw_input('Enter absolute/relative path and filename for output file (default=\'directory with sequences\'/output.txt):  ')
-        if not output:
-            output=os.path.join(input,'output.txt')
-        else:
-            try:
-                os.path.isdir(os.path.dirname(os.path.abspath(output)))
-                print 'os.path output'
-                print os.path.abspath(output)
-            except:
-                print 'This is not a valid path.  Make sure '
-                return 0
-        print ('\nOutput file written to %s') % (os.path.abspath(output))
-    return fileList, output, verbose
+        print "Please enter options on the command line in the form of\n\n./msatCommandFasta.py -i 'infile.txt' -o 'outfile.txt'\n\nTry ./msatCommand -h for help."
     
-def readInfo(output):
     
-    from Bio import Fasta
+    return inFile, outFile, searchType
     
-    file=open(output,'w')                                   # opens file for output - append only to keep from overwriting
+def readInfo(inFile, outFile, repeatChoice):
+    
+    print 'Scanning sequences for microsatellites.  Percent Complete:'
+    
+    file = open(inFile)
+    data = file.readlines()
+    file.close()
+    length = len(data)/2
+    interval = 1./length * 100.
+    
+    prog = progressBar(0,100,80)
+    
+    file=open(outFile,'w')                                   # opens file for output - append only to keep from overwriting
     file.write('Microsatellite repeats found in the following sequences: \n\n')
 
     parser = Fasta.RecordParser()
-    infile = open('/Users/bcf/svn_working/msatFinder/trunk/test/FASTA_Placental Seqs_BW.txt')
+    infile = open(inFile)
     iterator = Fasta.Iterator(infile, parser)
+    i = 0
     while 1:
         record = iterator.next()
         if not record:
             break
             infile.close()
             file.close()
-        dataOut=search().ephemeris(record.sequence) 
+        dataOut=search().ephemeris(record.sequence, repeatChoice) 
         dictKeys=dataOut.keys()
         dictKeys.sort()                                     # sorts keys so bp locations will be in order
         if dictKeys:
@@ -292,5 +368,10 @@ def readInfo(output):
                 dataList = dataOut[k].split()
                 file.write(('%s\t%s\t%s\t%s\n') % (record.title, ' '.join(dataList[:-7]), dataList[-7], ' '.join(dataList[-6:])))
             file.write(('---------------------------------------%s') % ('\n'))
+        i += interval
+        prog(i)
 
-readInfo("glennTest.txt")
+if __name__ == '__main__':
+    userInput,userOutput,userRepeatChoice = getUserFiles()
+    readInfo(userInput, userOutput, userRepeatChoice)
+    print '\n'
