@@ -1,7 +1,0 @@
-Microsatellite repeats found in the following sequences: 
-
-**********************/Users/bcf/svn_working/msatFinder/trunk/test/SIALIA-R3M4-P2D12**********************
-Reverse complement of dinucleotide repeat (AG), (TC)^15 found between bases 3 and 33. 
-Reverse complement of tetranucleotide repeat (AGAT), (TCTA)^4 found between bases 190 and 206. 
-Reverse complement of tetranucleotide repeat (AGAT), (TCTA)^8 found between bases 207 and 239. 
-trinucleotide repeat (AAC)^19 found between bases 881 and 938. 
