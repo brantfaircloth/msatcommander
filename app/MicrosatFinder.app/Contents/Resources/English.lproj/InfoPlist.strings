@@ -1,4 +1,0 @@
-CFBundleName = "MicrosatFinder";
-CFBundleShortVersionString = "1.0";
-CFBundleGetInfoString = "MicrosatFinder version 1.0 Copyright 2005 Brant";
-NSHumanReadableCopyright = "Copyright 2005 Brant.";
