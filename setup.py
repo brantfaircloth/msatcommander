@@ -11,7 +11,7 @@ import os, sys
 if os.name == 'posix':
     setup(
         name='msatCommand',
-        version='0.4.2',
+        version='0.4.4',
         description='python searching of fasta files for microsat repeats',
         author='Brant C. Faircloth',
         author_email='brant@uga.edu',
@@ -25,17 +25,24 @@ if os.name == 'posix':
     
 elif os.name == 'nt':
     import py2exe
+    opts= {
+        "py2exe":{
+            "packages":"Bio",
+            "excludes":"Tkinter"
+            }
+        }
     setup(
+        options=opts,
         name='msatCommand',
-        version='0.4.2',
+        version='0.4.5',
         description='python searching of fasta files for microsat repeats',
         author='Brant C. Faircloth',
         author_email='brant@uga.edu',
         license='GPL',
+        zipfile=None,
         windows=[
             {
-                'script':'msatCommandGui.py',
-                'icon_resources':[(1, 'gmconvert_icon_files2.ico')]
+                'script':'msatCommandGui.py'
             }
         ],
     )
