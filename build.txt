@@ -1,0 +1,23 @@
+msatcommander build instructions
+================================
+
+The following assume you are using python 2.4.3 or 2.5.0, wxPython 2.8.x, and biopython 1.43.
+
+You must also have an appropriate build (windows, OSX, linux, etc.) of primer3_core.  This
+may be downloaded from http://primer3.sourceforge.net for a number of platforms.  This binary
+should be placed in the checked out directory along with the other .py files.
+
+OSX
+===
+
+1.) rm -rf build dist
+2.) python setup.py py2app
+3.) ./image/build.sh (uses buildDMG.pl) for disk image 
+
+WINXP
+=====
+
+1.) rm -rf build dist
+2.) python setup.py py2exe --bundle 1
+3.) copy primer3_core to folder
+4.) zip

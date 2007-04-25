@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resource>
+  <object class="wxFrame" name="mscGuiMainFrame">
+    <title>MsatCommander</title>
+    <centered>0</centered>
+    <object class="wxPanel" name="mainPanel">
+      <pos>5,5</pos>
+      <object class="wxBoxSizer">
+        <orient>wxVERTICAL</orient>
+        <object class="sizeritem">
+          <object class="wxPanel" name="msatPanel">
+            <object class="wxPanel" name="msatChoices">
+              <object class="wxBoxSizer">
+                <orient>wxVERTICAL</orient>
+                <object class="sizeritem">
+                  <object class="wxBoxSizer">
+                    <orient>wxHORIZONTAL</orient>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="choicePanel">
+                        <object class="wxStaticText" name="chooseArrayText">
+                          <label>Choose Array Type:</label>
+                          <pos>5,5</pos>
+                        </object>
+                        <object class="wxCheckListBox" name="msatChoice">
+                          <content>
+                            <item checked="0">Mononucleotide</item>
+                            <item checked="0">Dinucleotide</item>
+                            <item checked="0">Trinucleotide</item>
+                            <item checked="0">Tetranucleotide</item>
+                            <item checked="0">Pentanucleotide</item>
+                            <item checked="0">Hexanucleotide</item>
+                            <item checked="1">All (slow!)</item>
+                          </content>
+                          <pos>10,25</pos>
+                          <size>202,150</size>
+                          <style>wxLB_MULTIPLE</style>
+                        </object>
+                        <style>wxSIMPLE_BORDER</style>
+                      </object>
+                      <flag>wxLEFT</flag>
+                      <minsize>225,185</minsize>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="lengthPanel">
+                        <object class="wxBoxSizer">
+                          <orient>wxVERTICAL</orient>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText" name="monoLengthText">
+                                  <label>Mononuc Repeat Length</label>
+                                  <style>wxALIGN_CENTRE</style>
+                                </object>
+                                <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxComboBox" name="monoLength">
+                                  <content>
+                                    <item>8</item>
+                                    <item>9</item>
+                                    <item>10</item>
+                                    <item>11</item>
+                                    <item>12</item>
+                                  </content>
+                                  <value>10</value>
+                                  <pos>300,0</pos>
+                                  <style></style>
+                                  <font>
+                                    <size>10</size>
+                                    <family>default</family>
+                                    <style>normal</style>
+                                    <weight>normal</weight>
+                                    <underlined>0</underlined>
+                                  </font>
+                                </object>
+                              </object>
+                            </object>
+                            <flag>wxALIGN_RIGHT</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText" name="diLengthText">
+                                  <label>Dinuc Repeat Length</label>
+                                  <style></style>
+                                </object>
+                                <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxComboBox" name="diLength">
+                                  <content>
+                                    <item>4</item>
+                                    <item>5</item>
+                                    <item>6</item>
+                                    <item>7</item>
+                                    <item>8</item>
+                                    <item>9</item>
+                                    <item>10</item>
+                                  </content>
+                                  <value>6</value>
+                                </object>
+                              </object>
+                            </object>
+                            <flag>wxALIGN_RIGHT</flag>
+                            <minsize>200,25</minsize>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText" name="triLengthText">
+                                  <label>Trinuc Repeat Length</label>
+                                  <style></style>
+                                </object>
+                                <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxComboBox" name="triLength">
+                                  <content>
+                                    <item>4</item>
+                                    <item>5</item>
+                                    <item>6</item>
+                                    <item>7</item>
+                                    <item>8</item>
+                                    <item>9</item>
+                                    <item>10</item>
+                                  </content>
+                                  <value>4</value>
+                                </object>
+                              </object>
+                            </object>
+                            <flag>wxALIGN_RIGHT</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText" name="tetraLengthText">
+                                  <label>Tetranuc Repeat Length</label>
+                                  <style></style>
+                                </object>
+                                <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxComboBox" name="tetraLength">
+                                  <content>
+                                    <item>4</item>
+                                    <item>5</item>
+                                    <item>6</item>
+                                    <item>7</item>
+                                    <item>8</item>
+                                    <item>9</item>
+                                    <item>10</item>
+                                  </content>
+                                  <value>4</value>
+                                </object>
+                              </object>
+                            </object>
+                            <flag>wxALIGN_RIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText" name="pentaLengthText">
+                                  <label>Pentanuc Repeat Length</label>
+                                  <style></style>
+                                </object>
+                                <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxComboBox" name="pentaLength">
+                                  <content>
+                                    <item>4</item>
+                                    <item>5</item>
+                                    <item>6</item>
+                                    <item>7</item>
+                                    <item>8</item>
+                                    <item>9</item>
+                                    <item>10</item>
+                                  </content>
+                                  <value>4</value>
+                                </object>
+                              </object>
+                            </object>
+                            <flag>wxALIGN_RIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText" name="hexaLengthText">
+                                  <label>Hexanuc Repeat Length</label>
+                                  <style></style>
+                                </object>
+                                <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxComboBox" name="hexaLength">
+                                  <content>
+                                    <item>4</item>
+                                    <item>5</item>
+                                    <item>6</item>
+                                    <item>7</item>
+                                    <item>8</item>
+                                    <item>9</item>
+                                    <item>10</item>
+                                  </content>
+                                  <value>4</value>
+                                </object>
+                              </object>
+                            </object>
+                            <flag>wxALIGN_RIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+                          </object>
+                        </object>
+                        <pos>200,0</pos>
+                        <style>wxSIMPLE_BORDER</style>
+                      </object>
+                      <flag>wxRIGHT</flag>
+                      <minsize>320,185</minsize>
+                    </object>
+                  </object>
+                </object>
+              </object>
+              <pos>5,5</pos>
+            </object>
+          </object>
+          <minsize>550,205</minsize>
+        </object>
+        <object class="sizeritem">
+          <object class="wxPanel" name="designFrame">
+            <object class="wxPanel" name="primerDesign">
+              <pos>5,5</pos>
+              <object class="wxStaticText" name="primerDesignText">
+                <label>Primer Design:</label>
+                <pos>5,5</pos>
+              </object>
+              <object class="wxPanel" name="primerOptionsPanel">
+                <pos>5,25</pos>
+                <object class="wxBoxSizer">
+                  <orient>wxHORIZONTAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxCheckBox" name="combineArrays">
+                      <label>Combine Arrays</label>
+                      <checked>0</checked>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>75,40</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="distanceText">
+                      <label>Distance (BP):</label>
+                      <style>wxALIGN_RIGHT</style>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>1,40</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxTextCtrl" name="combinationDistance">
+                      <value>50</value>
+                      <size>55,20</size>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>73,40</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxCheckBox" name="designPrimers">
+                      <label>Design Primers</label>
+                      <checked>0</checked>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>2,40</size>
+                  </object>
+                </object>
+                <style>wxSUNKEN_BORDER</style>
+              </object>
+              <size>545,80</size>
+              <style>wxSIMPLE_BORDER</style>
+            </object>
+          </object>
+          <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          <minsize>550,100</minsize>
+        </object>
+        <object class="sizeritem">
+          <object class="wxPanel" name="taggingFrame">
+            <object class="wxPanel" name="taggingOptions">
+              <pos>5,5</pos>
+              <size>545,80</size>
+              <object class="wxStaticText" name="tagOptionsText">
+                <label>Tagging Options:</label>
+                <pos>5,5</pos>
+              </object>
+              <style>wxSIMPLE_BORDER</style>
+              <object class="wxPanel" name="taggingOptionsPanel">
+                <pos>5,25</pos>
+                <object class="wxBoxSizer">
+                  <orient>wxHORIZONTAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxCheckBox" name="tagPrimers">
+                      <label>Tag Primers</label>
+                      <checked>0</checked>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>15,40</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxCheckBox" name="cagTag">
+                      <label>CAG Tag</label>
+                      <checked>1</checked>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>15,40</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxCheckBox" name="m13Tag">
+                      <label>M13 Tag</label>
+                      <checked>1</checked>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>10,40</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="customTagText">
+                      <label>Custom Tag:</label>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>1,40</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxTextCtrl" name="customTag">
+                      <value>None</value>
+                      <size>155,20</size>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>5,40</size>
+                  </object>
+                </object>
+                <style>wxSUNKEN_BORDER</style>
+              </object>
+            </object>
+          </object>
+          <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          <minsize>550,100</minsize>
+        </object>
+        <object class="sizeritem">
+          <object class="wxPanel" name="runFrame">
+            <object class="wxPanel" name="runFrameText">
+              <object class="wxStaticText" name="runProgramText">
+                <label>Run Program:</label>
+                <pos>5,5</pos>
+              </object>
+              <object class="wxPanel" name="runOptions">
+                <object class="wxBoxSizer">
+                  <orient>wxHORIZONTAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxPanel" name="fileOpenPanel">
+                      <object class="wxButton" name="fileOpen">
+                        <label>Select File to Scan</label>
+                        <pos>30,5</pos>
+                        <style></style>
+                      </object>
+                    </object>
+                    <minsize>170,30</minsize>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxPanel" name="fileSavePanel">
+                      <object class="wxButton" name="fileSave">
+                        <label>Select Save Location</label>
+                        <pos>30,5</pos>
+                      </object>
+                    </object>
+                    <minsize>185,30</minsize>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxPanel" name="runProgramPanel">
+                      <object class="wxButton" name="runProgram">
+                        <label>Run Program</label>
+                        <pos>30,5</pos>
+                      </object>
+                    </object>
+                    <minsize>140,30</minsize>
+                  </object>
+                </object>
+                <pos>5,25</pos>
+              </object>
+              <pos>5,5</pos>
+              <size>545,80</size>
+              <style>wxSIMPLE_BORDER</style>
+            </object>
+          </object>
+          <minsize>550,100</minsize>
+        </object>
+      </object>
+      <style></style>
+    </object>
+    <size>555,510</size>
+    <style>wxDEFAULT_FRAME_STYLE</style>
+  </object>
+</resource>
