@@ -237,10 +237,10 @@ class primerInfo:
                 except:
                     pass
         try:
-            os.remove(self.tempPrimer3File)
+            os.remove(tempfile)
         except OSError:
             time.sleep(0.1)
-            os.remove(self.tempPrimer3File)
+            os.remove(tempfile)
         return primerDataDict
 
 class excelSingleSpace:
