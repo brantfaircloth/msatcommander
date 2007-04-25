@@ -1,0 +1,31 @@
+#summary OSX Specific Notes and Details
+
+The OS X version has been tested by a number of individuals and is recommended.  It is a [http://www.apple.com/universal/ universal binary] and is available from the Downloads section.
+
+= Installation =
+
+  # Download the disk-image file (msatcommander-<version>-OSX.dmg)
+  # Open it (if not opened automatically by your browser)
+  # Drag the program icon to some location (e.g. /Applications)
+
+=Editing Primer Features=
+
+You can now make changes to primer features by editing the `primer.py` file.  This is a little complicated on OSX.  
+
+  # Right click on the Application
+  # Choose `Show Package Contents`
+  # Double-click `Contents`
+  # Double-click `Resources`
+  # Edit `primer.py` to your liking
+
+Primer design should support all primer3 1.1.1 features by making additions/changes in this file.  
+
+Feature changes are not currently available for the tagging options.  This is primarily because primer3 is somewhat picky with which values get input to the program. An incorrect addition could render the program useless and/or give you primers that do not work at all.  This is generally bad.
+
+=Additional Notes=
+  * Binary is built with Python 2.5.0
+  * py2app was used to build the application bundle
+
+
+
+

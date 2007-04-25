@@ -1,0 +1,60 @@
+#summary Unix-like OSs Specific Notes and Details
+
+=Getting The Source=
+The source code is available from the Downloads section as a tarball.  To unzip,untar, run:
+
+{{{
+tar -xzvf msatcommander-<version>.tar.gz
+}}}
+
+You can also check out the source from the trunk using subversion.  
+
+{{{
+svn checkout http://msatcommander.googlecode.com/svn/trunk/ msatcommander
+}}}
+
+=Getting primer3_core=
+Prior to runnning msatcommander, you will need to locate or build a [http://primer3.sourceforge.net binary version of primer3] (1.1.1 or greater).  The `primer3_core` binary should then be copied to the directory created from the tarball or the directory checked out from the trunk using subversion.
+
+
+= msatcommander GUI =
+
+== Additional dependencies==
+
+  * Python (2.4.3, 2.4.4, and 2.5.0 known to work)
+  * [http://www.wxpython.org/ wxPython] (version 2.8.xx)
+  * [http://biopython.org/wiki/Download biopython 1.43] (*MUST* be 1.43 or a current CVS snapshot)
+
+==Running the GUI==
+
+Provided that you are using a unix-like operating system (FreeBSD, Linux, Solaris, &c), you should be able to run the GUI source (msatcommander.py) with
+{{{
+python msatcommander.py
+}}} 
+*or* 
+{{{
+pythonw msatcommander.py
+}}} 
+depending on your python installation and environment.
+
+= Command-line version =
+
+There is also an older, command-line version of msatcommander (msatCommand.py).  This is currently available from the trunk svn directory:
+
+{{{
+svn checkout http://msatcommander.googlecode.com/svn/trunk/commandline/ msatcommander
+}}}
+
+You can only scan for 'All' microsatellite classes at the moment using this code.  It is unlikely that I will modify the commandline code to provide the functionality of the GUi code (the GUI stuff is bad enough and, unfortunately, commandline users are largely in the minority.  You may run the code with:
+
+{{{
+python msatCommand.py -i infile.fsa -o outfile.csv -s All
+}}}
+
+As above, there are several dependencies:
+
+  * Python (2.4.3 and 2.4.4 known to work; 2.5.x status unknown)
+  * [http://biopython.org/wiki/Download Biopython 1.43] (*MUST* be 1.43 or a current CVS snapshot)
+
+
+
