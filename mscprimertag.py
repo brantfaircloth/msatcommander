@@ -61,7 +61,7 @@ file src/gpl.txt or go to http://www.gnu.org/licenses/gpl.txt.
 ==================
 
 """
-import sys, os, string, csv, subprocess
+import sys, os, string, csv, subprocess, time
 
 class mods: 
     """class defining several methods we will use to modify dna sequence.""" 
@@ -236,7 +236,11 @@ class primerInfo:
                     del primerDataDict[item]
                 except:
                     pass
-        os.remove(tempfile)
+        try:
+            os.remove(self.tempPrimer3File)
+        except OSError:
+            time.sleep(0.1)
+            os.remove(self.tempPrimer3File)
         return primerDataDict
 
 class excelSingleSpace:

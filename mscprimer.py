@@ -62,7 +62,7 @@ file src/gpl.txt or go to http://www.gnu.org/licenses/gpl.txt.
 
 """
 
-import sys, os, csv, re, primer, subprocess
+import sys, os, csv, re, primer, subprocess, time
 from Bio import SeqIO
 #----------------------------------------------------------------------
 # get files with repeats from excel spreadsheet output by msatCommander
@@ -186,7 +186,11 @@ class primer3:
         else:
             pass
         # remove tempfile
-        os.remove(self.tempPrimer3File)
+        try:
+            os.remove(self.tempPrimer3File)
+        except OSError:
+            time.sleep(0.1)
+            os.remove(self.tempPrimer3File)
         
 class designPrimers:
     def __init__(self, outDir):
