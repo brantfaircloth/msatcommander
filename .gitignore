@@ -1,3 +1,5 @@
 *.tmproj
 *.pyc
 *.sqlite
+primer3_core
+primer3_config/
