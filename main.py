@@ -6,6 +6,7 @@ import msat
 import cPickle
 import sqlite3
 from Bio import SeqIO
+from p3wrapr import primer
 from PyQt4 import QtCore, QtGui
 from ui_msatcommander import Ui_msatcommander
 
@@ -43,6 +44,9 @@ class Window(QtGui.QWidget, Ui_msatcommander):
         lengths = self.getLengths()
         self.generateCollection(motifs, lengths)
         self.readSearchSave()
+        #TODO:  combined loci
+        if self.designPrimersCheckBox.isChecked():
+            self.designPrimers()
     
     def getMotifs(self):
         '''get the motifs for which we will search from user input'''
@@ -168,7 +172,58 @@ class Window(QtGui.QWidget, Ui_msatcommander):
             if self.pb.wasCanceled():
                 break
         self.pb.setValue(self.infileLength)
+    
+    def createPrimersTable(self):
+        '''add tables to the dbase to hold the primers'''
+        pass
+    
+    def designPrimers(self):
+        '''design primers for those reads possessing msat repeats'''
+        # setup basic primer design parameters
+        settings = primer.Settings()
+        settings.basic()
+        # Update primer3 settings for mispriming library
+        settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
+        #TODO: override settings with user input
         
+        
+        # get the reads with msats from the dbase
+        if not self.combineLociCheckBox.isChecked():
+            self.cur.execute('''SELECT count(*) FROM microsatellites''')
+            count = self.cur.fetchall()[0][0]
+            self.cur.execute('''SELECT 
+                sequences.id,
+                sequences.seq,
+                microsatellites.start,
+                microsatellites.end
+                FROM sequences, microsatellites
+                WHERE sequences.id = microsatellites.id
+                ''')
+        else:
+            self.cur.execute('''SELECT count(*) FROM combined_microsatellites''')
+            count = self.cur.fetchall()[0][0]
+            self.cur.execute('''SELECT sequences.id,
+                sequences.seq,
+                combined_microsatellites.start,
+                combined_microsatellites.end
+                FROM sequences, combined_microsatellites
+                WHERE sequences.id = combined_microsatellites.id
+                ''')
+        sequences = self.cur.fetchall()
+        for seq in sequences:
+            # de-blob the sequence objects
+            record = cPickle.loads(str(seq[1]))
+            target = '%s,%s' % (seq[2], seq[3]-seq[2])
+            primer3 = primer.Primers()
+            primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
+            try:
+                print "PRIMER LEFT:  %s, PRIMER RIGHT: %s" % (primer3.primers[0]['PRIMER_LEFT_SEQUENCE'], primer3.primers[0]['PRIMER_LEFT_SEQUENCE'])
+            except:
+                pass
+        QtCore.pyqtRemoveInputHook()
+        pdb.set_trace()  
+
+
 def qt_trace():
   '''Set a tracepoint in the Python debugger that works with Qt'''
   from PyQt4.QtCore import pyqtRemoveInputHook
