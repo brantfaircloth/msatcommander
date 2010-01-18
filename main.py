@@ -173,21 +173,76 @@ class Window(QtGui.QWidget, Ui_msatcommander):
                 break
         self.pb.setValue(self.infileLength)
     
-    def createPrimersTable(self):
+    def createPrimersTable(self, name):
         '''add tables to the dbase to hold the primers'''
-        pass
+        # drop any current tables
+        query = '''DROP TABLE IF EXISTS %s''' % name
+        self.cur.execute(query)
+        # create the new primers table
+        query = ('''CREATE TABLE %s (
+            id int,
+            primer int,
+            left text,
+            left_sequence text,
+            left_tm real,
+            left_gc real,
+            left_self_end real,
+            left_self_any real,
+            left_hairpin real,
+            left_end_stability real,
+            left_penalty real,
+            right text,
+            right_sequence text,
+            right_tm real,
+            right_gc real,
+            right_self_end real,
+            right_self_any real,
+            right_hairpin real,
+            right_end_stability real,
+            right_penalty real,
+            pair_product_size real,
+            pair_compl_end real,
+            pair_compl_any real,
+            pair_penalty real,
+            FOREIGN KEY(id) REFERENCES records(id)
+            )''' % name)
+        self.cur.execute(query)
+        self.conn.commit()
+        
+    def createTaggedPrimersTable(self):
+        '''add tables to the dbase to hold the primers'''
+        # drop any current tables
+        self.cur.execute('''DROP TABLE IF EXISTS tagged_primers''')
+        # create the new primers table
+        self.cur.execute('''CREATE TABLE tagged_primers (
+            id int,
+            best int,
+            primer int,
+            tag text,
+            tagged text,
+            left text,
+            left_sequence text,
+            left_self_end real,
+            left_self_any real,
+            left_hairpin real,
+            left_penalty real,
+            right text,
+            right_sequence text,
+            right_self_end real,
+            right_self_any real,
+            right_hairpin real,
+            right_penalty real,
+            pair_product_size real,
+            pair_compl_end real,
+            pair_compl_any real,
+            pair_penalty real,
+            FOREIGN KEY(id) REFERENCES records(id),
+            FOREIGN KEY(primer) REFERENCES primers(primer)
+            )''')
+        self.conn.commit() 
     
-    def designPrimers(self):
-        '''design primers for those reads possessing msat repeats'''
-        # setup basic primer design parameters
-        settings = primer.Settings()
-        settings.basic()
-        # Update primer3 settings for mispriming library
-        settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
-        #TODO: override settings with user input
-        
-        
-        # get the reads with msats from the dbase
+    def getMsatReads(self):
+        '''get microsatellite containing reads from the database'''
         if not self.combineLociCheckBox.isChecked():
             self.cur.execute('''SELECT count(*) FROM microsatellites''')
             count = self.cur.fetchall()[0][0]
@@ -210,26 +265,132 @@ class Window(QtGui.QWidget, Ui_msatcommander):
                 WHERE sequences.id = combined_microsatellites.id
                 ''')
         sequences = self.cur.fetchall()
+        return count, sequences
+    
+    
+    def storePrimers(self, table, key, primers):
+        '''store primers in the database'''
+        #QtCore.pyqtRemoveInputHook()
+        #pdb.set_trace()
+        for i,p in primers.iteritems():
+            if i != 'metadata':
+                # create a copy of the dict, to which we add the
+                # FOREIGN KEY reference
+                td = p.copy()
+                td['ID'] = key
+                td['PRIMER'] = i
+                query = ('''INSERT INTO %s VALUES (
+                    :ID,
+                    :PRIMER,
+                    :PRIMER_LEFT,
+                    :PRIMER_LEFT_SEQUENCE,
+                    :PRIMER_LEFT_TM,
+                    :PRIMER_LEFT_GC_PERCENT,
+                    :PRIMER_LEFT_SELF_END_TH,
+                    :PRIMER_LEFT_SELF_ANY_TH,
+                    :PRIMER_LEFT_HAIRPIN_TH,
+                    :PRIMER_LEFT_END_STABILITY,
+                    :PRIMER_LEFT_PENALTY,
+                    :PRIMER_RIGHT,
+                    :PRIMER_RIGHT_SEQUENCE,
+                    :PRIMER_RIGHT_TM,
+                    :PRIMER_RIGHT_GC_PERCENT,
+                    :PRIMER_RIGHT_SELF_END_TH,
+                    :PRIMER_RIGHT_SELF_ANY_TH,
+                    :PRIMER_RIGHT_HAIRPIN_TH,
+                    :PRIMER_RIGHT_END_STABILITY,
+                    :PRIMER_RIGHT_PENALTY,
+                    :PRIMER_PAIR_PRODUCT_SIZE,
+                    :PRIMER_PAIR_COMPL_END_TH,
+                    :PRIMER_PAIR_COMPL_ANY_TH,
+                    :PRIMER_PAIR_PENALTY
+                    )''' % table)
+                self.cur.execute(query, td)
+        self.conn.commit()
+    
+    def storeTaggedPrimers(self, key, primers, best):
+        '''store primers in the database'''
+        #QtCore.pyqtRemoveInputHook()
+        #pdb.set_trace()
+        for i,p in primers.iteritems():
+            if i != 'metadata':
+                # create a copy of the dict, to which we add the
+                # FOREIGN KEY reference
+                td = p.copy()
+                td['ID'] = key
+                td['BEST'] = 0
+                td['PRIMER'], td['TAG'], td['TAGGED'] = i.split('_')
+                self.cur.execute('''INSERT INTO tagged_primers VALUES (
+                    :ID,
+                    :BEST,
+                    :PRIMER,
+                    :TAG,
+                    :TAGGED,
+                    :PRIMER_LEFT,
+                    :PRIMER_LEFT_SEQUENCE,
+                    :PRIMER_LEFT_SELF_END_TH,
+                    :PRIMER_LEFT_SELF_ANY_TH,
+                    :PRIMER_LEFT_HAIRPIN_TH,
+                    :PRIMER_LEFT_PENALTY,
+                    :PRIMER_RIGHT,
+                    :PRIMER_RIGHT_SEQUENCE,
+                    :PRIMER_RIGHT_SELF_END_TH,
+                    :PRIMER_RIGHT_SELF_ANY_TH,
+                    :PRIMER_RIGHT_HAIRPIN_TH,
+                    :PRIMER_RIGHT_PENALTY,
+                    :PRIMER_PAIR_PRODUCT_SIZE,
+                    :PRIMER_PAIR_COMPL_END_TH,
+                    :PRIMER_PAIR_COMPL_ANY_TH,
+                    :PRIMER_PAIR_PENALTY
+                    )''', (td))
+        if best: # is the if necessary?
+            best = best.split('_')
+            self.cur.execute('''UPDATE tagged_primers 
+                SET best = 1 WHERE id = ? 
+                AND primer = ? AND tag = ? 
+                AND tagged = ?''',
+                (key, best[0], best[1], best[2]))
+        self.conn.commit()    
+    
+    def designPrimers(self):
+        '''design primers for those reads possessing msat repeats'''
+        # create the unlabeled primers table
+        self.createPrimersTable('primers')
+        # setup basic primer design parameters
+        settings = primer.Settings()
+        settings.basic()
+        # Update primer3 settings for mispriming library
+        settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
+        #TODO: override settings with user input
+        
+        if self.tagPrimersCheckBox.isChecked():
+            self.createTaggedPrimersTable()
+            # setup the settings for tagging primers
+            tag_settings = primer.Settings()
+            tag_settings.reduced(PRIMER_PICK_ANYWAY=1)
+        # get the reads with msats from the dbase
+        count, sequences = self.getMsatReads()
         for seq in sequences:
             # de-blob the sequence objects
             record = cPickle.loads(str(seq[1]))
             target = '%s,%s' % (seq[2], seq[3]-seq[2])
             primer3 = primer.Primers()
             primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
-            try:
-                print "PRIMER LEFT:  %s, PRIMER RIGHT: %s" % (primer3.primers[0]['PRIMER_LEFT_SEQUENCE'], primer3.primers[0]['PRIMER_LEFT_SEQUENCE'])
-            except:
-                pass
-        QtCore.pyqtRemoveInputHook()
-        pdb.set_trace()  
+            # update dbase tables with primers
+            if primer3.primers_designed:
+                self.storePrimers('primers', seq[0], primer3.primers)
+            # tag
+            if primer3.primers_designed and self.tagPrimersCheckBox.isChecked():
+                cag, m13r, custom = None, None, None
+                if self.cagTagCheckBox.isChecked(): cag = 'CAGTCGGGCGTCATCA'
+                if self.m13rCheckBox.isChecked(): m13r = 'GGAAACAGCTATGACCAT'
+                if self.customTagCheckBox.isChecked(): custom = str(self.customTagLineEdit.text())
+                primer3.tag(tag_settings, CAG=cag, M13R=m13r, Custom = custom)
+                if primer3.tagged_good:
+                    #pigtail
 
-
-def qt_trace():
-  '''Set a tracepoint in the Python debugger that works with Qt'''
-  from PyQt4.QtCore import pyqtRemoveInputHook
-  from pdb import set_trace
-  pyqtRemoveInputHook()
-  set_trace()
+                    #update dbase tables with primers
+                    self.storeTaggedPrimers(seq[0], primer3.tagged_good, primer3.tagged_best_id)
 
 
 if __name__ == "__main__":
