@@ -35,6 +35,58 @@ class Window(QtGui.QWidget, Ui_msatcommander):
         '''quit the program'''
         sys.exit()
     
+    def message(self, text):
+        self.message = QtGui.QMessageBox(self)
+        self.message.setText(text)
+        self.message.exec_()
+
+    def checkPrimersOutput(self):
+        '''check to make sure we've designed primers before we output them'''
+        if not self.designPrimersCheckBox.isChecked():
+            self.message = QtGui.QMessageBox.critical(self, 'Error', \
+                '''You must (click) "Design Primers" to output primer \
+sequences.''')
+            self.primersCheckBox.setCheckState(QtCore.Qt.Unchecked)
+        else:
+            pass
+            
+    def checkTaggedPrimersOutput(self):
+        '''check to make sure we've tagged primers before we output them'''
+        if not self.tagPrimersCheckBox.isChecked() or not self.designPrimersCheckBox.isChecked():
+            self.message = QtGui.QMessageBox.critical(self, 'Error',
+                '''You must select "Design Primers" AND "Tag Primers" to \
+output tagged primer sequences.''')
+            self.taggedPrimersCheckBox.setCheckState(QtCore.Qt.Unchecked)
+        else:
+            pass
+    
+    def checkCombineRepeatsOutput(self):
+        '''check to make sure we've combined loci before we output them'''
+        if not self.combineLociCheckBox.isChecked():
+            self.message = QtGui.QMessageBox.critical(self, 'Error',
+                '''You must select "Combine Loci" to output combined \
+repeats.''')
+            self.combinedRepeatsCheckBox.setCheckState(QtCore.Qt.Unchecked)
+        else:
+            pass
+    
+    def checkRepeatsOutput(self):
+        '''check to make sure we've searched for repeats before we combine'''
+        if True not in [m.isChecked() for m in (
+            self.mononucCheckBox,
+            self.dinucCheckBox,
+            self.trinucCheckBox,
+            self.tetranucCheckBox,
+            self.pentanucCheckBox,
+            self.hexanucCheckBox)
+            ]:
+            self.message = QtGui.QMessageBox.critical(self, 'Error',
+                '''You must select a repeat class for which to search before \
+to output repeats.''')
+            self.repeatsCheckBox.setCheckState(QtCore.Qt.Unchecked)
+        else:
+            pass
+    
     def accept(self):
         '''this is essentially the main loop'''
         self.open()
@@ -437,6 +489,7 @@ class Window(QtGui.QWidget, Ui_msatcommander):
             extension = 'csv'
         elif self.tabDelimitedRadioButton.isChecked():
             extension = 'tdt'
+        
         if self.repeatsCheckBox.isChecked():
             out = 'msatcommander.microsatellites.%s' % extension
             self.cur.execute('SELECT * from microsatellites')
@@ -449,7 +502,9 @@ class Window(QtGui.QWidget, Ui_msatcommander):
             out = 'msatcommander.microsatellites.combined.%s' % extension
             self.cur.execute('SELECT * from combined_microsatellites')
         
-        if self.primersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
+        if self.primersCheckBox.isChecked() \
+                and not self.tagPrimersCheckBox.isChecked() \
+                and not self.pigtailPrimersCheckBox.isChecked():
             out = 'msatcommander.primers.%s' % extension
             # get the best unlabelled primers
             self.cur.execute('SELECT * from primers where primer = 0')
@@ -457,15 +512,31 @@ class Window(QtGui.QWidget, Ui_msatcommander):
             self.cur.execute('PRAGMA table_info(primers)')
             header = [x[1] for x in self.cur.fetchall()]
             self.outputWriter(out, extension, header, data)
-            #if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
-            #    out = 'msatcommander.pigtailed_primers.%s' % extension
-            #    self.cur.execute('SELECT * from tagged_primers')
-            #    data = self.cur.fetchall()
-            #    self.cur.execute('PRAGMA table_info(tagged_primers)')
-            #    header = [x[1] for x in self.cur.fetchall()]
-            #    self.outputWriter(out, extension, header, data)
-                
-        if self.primersCheckBox.isChecked() and self.taggedPrimersCheckBox.isChecked():
+        
+        if self.primersCheckBox.isChecked() \
+                and self.pigtailPrimersCheckBox.isChecked() \
+                and not self.tagPrimersCheckBox.isChecked():
+            self.cur.execute('PRAGMA table_info(primers)')
+            out = 'msatcommander.primers.%s' % extension
+            header = [x[1] for x in self.cur.fetchall()]
+            rows = ['primers.' + x for x in header]
+            rows = ', '.join(rows)
+            # get best primers based on best tagged primers
+            query = '''SELECT %s FROM primers, tagged_primers 
+                WHERE primers.id = tagged_primers.id 
+                AND primers.primer = tagged_primers.primer
+                AND tagged_primers.best = 1''' % rows
+            data = self.cur.execute(query)
+            self.outputWriter(out, extension, header, data)
+            self.cur.execute('PRAGMA table_info(tagged_primers)')
+            out = 'msatcommander.pigtailed_primers.%s' % extension
+            header = [x[1] for x in self.cur.fetchall()]
+            self.cur.execute('SELECT * from tagged_primers where best = 1')
+            data = self.cur.fetchall()
+            self.outputWriter(out, extension, header, data)
+        
+        if self.primersCheckBox.isChecked() \
+                and self.taggedPrimersCheckBox.isChecked():
             self.cur.execute('PRAGMA table_info(primers)')
             out = 'msatcommander.primers.%s' % extension
             header = [x[1] for x in self.cur.fetchall()]
@@ -484,7 +555,15 @@ class Window(QtGui.QWidget, Ui_msatcommander):
             self.cur.execute('SELECT * from tagged_primers where best = 1')
             data = self.cur.fetchall()
             self.outputWriter(out, extension, header, data)
-
+        
+        if self.taggedPrimersCheckBox.isChecked() \
+                and not self.primersCheckBox.isChecked():
+            self.cur.execute('PRAGMA table_info(tagged_primers)')
+            out = 'msatcommander.tagged_primers.%s' % extension
+            header = [x[1] for x in self.cur.fetchall()]
+            self.cur.execute('SELECT * from tagged_primers where best = 1')
+            data = self.cur.fetchall()
+            self.outputWriter(out, extension, header, data)
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
