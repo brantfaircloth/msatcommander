@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/msatcommander.ui'
 #
-# Created: Mon Jan 18 13:55:24 2010
+# Created: Tue Jan 19 09:20:35 2010
 #      by: PyQt4 UI code generator 4.7
 #
 # WARNING! All changes made in this file will be lost!
@@ -231,6 +231,10 @@ class Ui_msatcommander(object):
         self.tabWidget.setCurrentIndex(0)
         QtCore.QObject.connect(self.cancelButton, QtCore.SIGNAL("clicked()"), msatcommander.close)
         QtCore.QObject.connect(self.runButton, QtCore.SIGNAL("clicked()"), msatcommander.accept)
+        QtCore.QObject.connect(self.primersCheckBox, QtCore.SIGNAL("clicked()"), msatcommander.checkPrimersOutput)
+        QtCore.QObject.connect(self.taggedPrimersCheckBox, QtCore.SIGNAL("clicked()"), msatcommander.checkTaggedPrimersOutput)
+        QtCore.QObject.connect(self.combinedRepeatsCheckBox, QtCore.SIGNAL("clicked()"), msatcommander.checkCombineRepeatsOutput)
+        QtCore.QObject.connect(self.repeatsCheckBox, QtCore.SIGNAL("clicked()"), msatcommander.checkRepeatsOutput)
         QtCore.QMetaObject.connectSlotsByName(msatcommander)
         msatcommander.setTabOrder(self.mononucCheckBox, self.mononucSpinBox)
         msatcommander.setTabOrder(self.mononucSpinBox, self.dinucCheckBox)

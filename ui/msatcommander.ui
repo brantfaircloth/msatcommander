@@ -894,5 +894,69 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>primersCheckBox</sender>
+   <signal>clicked()</signal>
+   <receiver>msatcommander</receiver>
+   <slot>checkPrimersOutput()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>398</x>
+     <y>251</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>260</x>
+     <y>272</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>taggedPrimersCheckBox</sender>
+   <signal>clicked()</signal>
+   <receiver>msatcommander</receiver>
+   <slot>checkTaggedPrimersOutput()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>398</x>
+     <y>271</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>260</x>
+     <y>272</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>combinedRepeatsCheckBox</sender>
+   <signal>clicked()</signal>
+   <receiver>msatcommander</receiver>
+   <slot>checkCombineRepeatsOutput()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>398</x>
+     <y>231</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>260</x>
+     <y>272</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>repeatsCheckBox</sender>
+   <signal>clicked()</signal>
+   <receiver>msatcommander</receiver>
+   <slot>checkRepeatsOutput()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>398</x>
+     <y>211</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>260</x>
+     <y>272</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
 </ui>
