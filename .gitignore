@@ -1,5 +1,7 @@
 *.tmproj
 *.pyc
 *.sqlite
+*.csv
+*.txt
 primer3_core
 primer3_config/
