@@ -167,6 +167,7 @@ to output repeats.''')
         )''')
         # create the microsatellite table
         self.cur.execute('''CREATE TABLE microsatellites (
+        records_id int,
         id int,
         motif text,
         start int,
@@ -174,7 +175,7 @@ to output repeats.''')
         preceding int,
         following int,
         count int,
-        FOREIGN KEY(id) REFERENCES records(id)
+        FOREIGN KEY(records_id) REFERENCES records(id)
         )''')
         #TODO: move commit until after all operations?
         self.conn.commit()
@@ -191,6 +192,7 @@ to output repeats.''')
     def readSearchSave(self):
         '''read the infile, search the reads for msats'''
         index = 0
+        msat_index = 0
         # Setup progress bar - boo-yah!!
         self.pb = QtGui.QProgressDialog("Searching for microsatellites...",\
             "Cancel", 0, self.infileLength)
@@ -213,10 +215,12 @@ to output repeats.''')
             for match in record.matches:
                 for motif in record.matches[match]:
                     count = (motif[0][1] - motif[0][0])/len(match)
-                    self.cur.execute('''INSERT INTO microsatellites (id, \
-                        motif, start, end, preceding, following, count) \
-                        VALUES (?,?,?,?,?,?,?)''',(index, match, motif[0][0],\
-                        motif[0][1], motif[1], motif[2], count))
+                    self.cur.execute('''INSERT INTO microsatellites \
+                        (records_id, id, motif, start, end, preceding, \
+                        following, count) VALUES (?,?,?,?,?,?,?,?)''', \
+                        (index, msat_index, match, motif[0][0],motif[0][1], \
+                        motif[1], motif[2], count))
+                    msat_index += 1
             self.conn.commit()
             # we're manually indexing the primary key here
             index += 1
@@ -234,7 +238,8 @@ to output repeats.''')
         self.cur.execute(query)
         # create the new primers table
         query = ('''CREATE TABLE %s (
-            id int,
+            records_id int,
+            msats_id int,
             primer int,
             left text,
             left_sequence text,
@@ -258,7 +263,8 @@ to output repeats.''')
             pair_compl_end real,
             pair_compl_any real,
             pair_penalty real,
-            FOREIGN KEY(id) REFERENCES records(id)
+            FOREIGN KEY(records_id) REFERENCES records(id),
+            FOREIGN KEY(msats_id) REFERENCES microsatellites(id)
             )''' % name)
         self.cur.execute(query)
         self.conn.commit()
@@ -269,9 +275,10 @@ to output repeats.''')
         self.cur.execute('''DROP TABLE IF EXISTS tagged_primers''')
         # create the new primers table
         self.cur.execute('''CREATE TABLE tagged_primers (
-            id int,
-            best int,
+            records_id int,
+            msats_id int,
             primer int,
+            best int,
             tag text,
             tagged text,
             tag_seq test,
@@ -292,8 +299,8 @@ to output repeats.''')
             pair_compl_end real,
             pair_compl_any real,
             pair_penalty real,
-            FOREIGN KEY(id) REFERENCES records(id),
-            FOREIGN KEY(primer) REFERENCES primers(primer)
+            FOREIGN KEY(records_id) REFERENCES records(id),
+            FOREIGN KEY(msats_id) REFERENCES microsatellites(id)
             )''')
         self.conn.commit() 
     
@@ -305,10 +312,11 @@ to output repeats.''')
             self.cur.execute('''SELECT 
                 sequences.id,
                 sequences.seq,
+                microsatellites.id,
                 microsatellites.start,
                 microsatellites.end
                 FROM sequences, microsatellites
-                WHERE sequences.id = microsatellites.id
+                WHERE sequences.id = microsatellites.records_id
                 ''')
         else:
             self.cur.execute('''SELECT count(*) FROM combined_microsatellites''')
@@ -324,7 +332,7 @@ to output repeats.''')
         return count, sequences
     
     
-    def storePrimers(self, table, key, primers):
+    def storePrimers(self, table, record_id, msat_id, primers):
         '''store primers in the database'''
         #QtCore.pyqtRemoveInputHook()
         #pdb.set_trace()
@@ -333,10 +341,12 @@ to output repeats.''')
                 # create a copy of the dict, to which we add the
                 # FOREIGN KEY reference
                 td = p.copy()
-                td['ID'] = key
+                td['RECORD_ID'] = record_id
+                td['MSAT_ID'] = msat_id
                 td['PRIMER'] = i
                 query = ('''INSERT INTO %s VALUES (
-                    :ID,
+                    :RECORD_ID,
+                    :MSAT_ID,
                     :PRIMER,
                     :PRIMER_LEFT,
                     :PRIMER_LEFT_SEQUENCE,
@@ -364,7 +374,7 @@ to output repeats.''')
                 self.cur.execute(query, td)
         self.conn.commit()
     
-    def storeTaggedPrimers(self, key, primers, best=None):
+    def storeTaggedPrimers(self, record_id, msat_id, primers, best=None):
         '''store primers in the database'''
         #QtCore.pyqtRemoveInputHook()
         #pdb.set_trace()
@@ -373,13 +383,15 @@ to output repeats.''')
                 # create a copy of the dict, to which we add the
                 # FOREIGN KEY reference
                 td = p.copy()
-                td['ID'] = key
+                td['RECORD_ID'] = record_id
+                td['MSAT_ID'] = msat_id
                 td['BEST'] = 0
                 td['PRIMER'], td['TAG'], td['TAGGED'] = i.split('_')
                 self.cur.execute('''INSERT INTO tagged_primers VALUES (
-                    :ID,
-                    :BEST,
+                    :RECORD_ID,
+                    :MSAT_ID,
                     :PRIMER,
+                    :BEST,
                     :TAG,
                     :TAGGED,
                     :PRIMER_TAG,
@@ -404,10 +416,13 @@ to output repeats.''')
         if best: # is the if necessary?
             best = best.split('_')
             self.cur.execute('''UPDATE tagged_primers 
-                SET best = 1 WHERE id = ? 
-                AND primer = ? AND tag = ? 
+                SET best = 1 WHERE 
+                records_id = ? 
+                AND msats_id = ?
+                AND primer = ? 
+                AND tag = ? 
                 AND tagged = ?''',
-                (key, best[0], best[1], best[2]))
+                (record_id, msat_id, best[0], best[1], best[2]))
         self.conn.commit()    
     
     def designPrimers(self):
@@ -437,12 +452,12 @@ to output repeats.''')
         for seq in sequences:
             # unpickle the sequence objects
             record = cPickle.loads(str(seq[1]))
-            target = '%s,%s' % (seq[2], seq[3]-seq[2])
+            target = '%s,%s' % (seq[3], seq[4]-seq[3])
             primer3 = primer.Primers()
             primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
             # update dbase tables with primers
             if primer3.primers_designed:
-                self.storePrimers('primers', seq[0], primer3.primers)
+                self.storePrimers('primers', seq[0], seq[2], primer3.primers)
                 # if we're only pigtailing the designed primers
                 if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
                     primer3.pigtail(str(self.pigtailPrimersTagLineEdit.text()))
@@ -460,7 +475,7 @@ to output repeats.''')
                     #QtCore.pyqtRemoveInputHook()
                     #pdb.set_trace()
                     #update dbase tables with primers
-                    self.storeTaggedPrimers(seq[0], primer3.tagged_good, primer3.tagged_best_id)
+                    self.storeTaggedPrimers(seq[0], seq[2], primer3.tagged_good, primer3.tagged_best_id)
             index += 1
             # update the progress bar
             self.pb.setValue(index)
@@ -522,8 +537,9 @@ to output repeats.''')
             rows = ['primers.' + x for x in header]
             rows = ', '.join(rows)
             # get best primers based on best tagged primers
-            query = '''SELECT %s FROM primers, tagged_primers 
-                WHERE primers.id = tagged_primers.id 
+            query = '''SELECT %s FROM primers, tagged_primers WHERE 
+                primers.records_id = tagged_primers.records_id 
+                AND primers.msats_id = tagged_primers.msats_id
                 AND primers.primer = tagged_primers.primer
                 AND tagged_primers.best = 1''' % rows
             data = self.cur.execute(query)
@@ -543,8 +559,9 @@ to output repeats.''')
             rows = ['primers.' + x for x in header]
             rows = ', '.join(rows)
             # get best primers based on best tagged primers
-            query = '''SELECT %s FROM primers, tagged_primers 
-                WHERE primers.id = tagged_primers.id 
+            query = '''SELECT %s FROM primers, tagged_primers WHERE 
+                primers.records_id = tagged_primers.records_id 
+                AND primers.msats_id = tagged_primers.msats_id
                 AND primers.primer = tagged_primers.primer
                 AND tagged_primers.best = 1''' % rows
             data = self.cur.execute(query)
