@@ -290,7 +290,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>60</y>
+        <y>50</y>
         <width>151</width>
         <height>21</height>
        </rect>
@@ -299,24 +299,24 @@
        <string>Tag Primers</string>
       </property>
      </widget>
-     <widget class="QCheckBox" name="pigtailsPrimersCheckBox">
+     <widget class="QCheckBox" name="pigtailPrimersCheckBox">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>170</y>
+        <y>150</y>
         <width>171</width>
         <height>21</height>
        </rect>
       </property>
       <property name="text">
-       <string>Pigtail (GTTT) Primers</string>
+       <string>Pigtail Primers</string>
       </property>
      </widget>
      <widget class="QCheckBox" name="cagTagCheckBox">
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>80</y>
+        <y>70</y>
         <width>151</width>
         <height>21</height>
        </rect>
@@ -332,7 +332,7 @@
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>100</y>
+        <y>90</y>
         <width>151</width>
         <height>21</height>
        </rect>
@@ -348,7 +348,7 @@
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>120</y>
+        <y>110</y>
         <width>151</width>
         <height>21</height>
        </rect>
@@ -361,7 +361,7 @@
       <property name="geometry">
        <rect>
         <x>50</x>
-        <y>140</y>
+        <y>130</y>
         <width>160</width>
         <height>22</height>
        </rect>
@@ -374,6 +374,25 @@
       </property>
       <property name="text">
        <string/>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="pigtailPrimersTagLineEdit">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>170</y>
+        <width>160</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="inputMethodHints">
+       <set>Qt::ImhNone</set>
+      </property>
+      <property name="text">
+       <string>GTTT</string>
       </property>
      </widget>
     </widget>
@@ -401,6 +420,9 @@
       <property name="text">
        <string>Use Multiprocessing</string>
       </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
      </widget>
     </widget>
     <widget class="QGroupBox" name="groupBox_4">
@@ -415,7 +437,7 @@
      <property name="title">
       <string>Output</string>
      </property>
-     <widget class="QCheckBox" name="checkBox_16">
+     <widget class="QCheckBox" name="repeatsCheckBox">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -428,7 +450,7 @@
        <string>Repeats</string>
       </property>
      </widget>
-     <widget class="QCheckBox" name="checkBox_17">
+     <widget class="QCheckBox" name="combinedRepeatsCheckBox">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -441,7 +463,7 @@
        <string>Combined Repeats</string>
       </property>
      </widget>
-     <widget class="QCheckBox" name="checkBox_18">
+     <widget class="QCheckBox" name="primersCheckBox">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -454,7 +476,7 @@
        <string>Primers</string>
       </property>
      </widget>
-     <widget class="QCheckBox" name="checkBox_19">
+     <widget class="QCheckBox" name="taggedPrimersCheckBox">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -483,7 +505,7 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QRadioButton" name="radioButton_2">
+     <widget class="QRadioButton" name="tabDelimitedRadioButton">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -496,7 +518,7 @@
        <string>Tab-Delimited</string>
       </property>
      </widget>
-     <widget class="QRadioButton" name="radioButton_3">
+     <widget class="QCheckBox" name="keepDatabaseCheckBox">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -506,7 +528,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Database</string>
+       <string>Keep Database</string>
       </property>
      </widget>
     </widget>
@@ -813,19 +835,18 @@
   <tabstop>combineLociCheckBox</tabstop>
   <tabstop>tagPrimersCheckBox</tabstop>
   <tabstop>designPrimersCheckBox</tabstop>
-  <tabstop>pigtailsPrimersCheckBox</tabstop>
+  <tabstop>pigtailPrimersCheckBox</tabstop>
   <tabstop>cagTagCheckBox</tabstop>
   <tabstop>m13rCheckBox</tabstop>
   <tabstop>cancelButton</tabstop>
   <tabstop>customTagLineEdit</tabstop>
   <tabstop>useMultiprocessingCheckBox</tabstop>
-  <tabstop>checkBox_16</tabstop>
-  <tabstop>checkBox_17</tabstop>
-  <tabstop>checkBox_18</tabstop>
-  <tabstop>checkBox_19</tabstop>
+  <tabstop>repeatsCheckBox</tabstop>
+  <tabstop>combinedRepeatsCheckBox</tabstop>
+  <tabstop>primersCheckBox</tabstop>
+  <tabstop>taggedPrimersCheckBox</tabstop>
   <tabstop>commaSeparatedRadioButton</tabstop>
-  <tabstop>radioButton_2</tabstop>
-  <tabstop>radioButton_3</tabstop>
+  <tabstop>tabDelimitedRadioButton</tabstop>
   <tabstop>spinBox_4</tabstop>
   <tabstop>spinBox_6</tabstop>
   <tabstop>spinBox_7</tabstop>
