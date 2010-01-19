@@ -44,9 +44,11 @@ class Window(QtGui.QWidget, Ui_msatcommander):
         lengths = self.getLengths()
         self.generateCollection(motifs, lengths)
         self.readSearchSave()
-        #TODO:  combined loci
+        #if self.combineLociCheckBox.isChecked()
+        #    self.combineLoci()
         if self.designPrimersCheckBox.isChecked():
             self.designPrimers()
+        self.outputResults()
     
     def getMotifs(self):
         '''get the motifs for which we will search from user input'''
@@ -220,6 +222,8 @@ class Window(QtGui.QWidget, Ui_msatcommander):
             primer int,
             tag text,
             tagged text,
+            tag_seq test,
+            common text,
             left text,
             left_sequence text,
             left_self_end real,
@@ -308,7 +312,7 @@ class Window(QtGui.QWidget, Ui_msatcommander):
                 self.cur.execute(query, td)
         self.conn.commit()
     
-    def storeTaggedPrimers(self, key, primers, best):
+    def storeTaggedPrimers(self, key, primers, best=None):
         '''store primers in the database'''
         #QtCore.pyqtRemoveInputHook()
         #pdb.set_trace()
@@ -326,6 +330,8 @@ class Window(QtGui.QWidget, Ui_msatcommander):
                     :PRIMER,
                     :TAG,
                     :TAGGED,
+                    :PRIMER_TAG,
+                    :PRIMER_TAG_COMMON_BASES,
                     :PRIMER_LEFT,
                     :PRIMER_LEFT_SEQUENCE,
                     :PRIMER_LEFT_SELF_END_TH,
@@ -354,24 +360,30 @@ class Window(QtGui.QWidget, Ui_msatcommander):
     
     def designPrimers(self):
         '''design primers for those reads possessing msat repeats'''
-        # create the unlabeled primers table
         self.createPrimersTable('primers')
         # setup basic primer design parameters
         settings = primer.Settings()
         settings.basic()
-        # Update primer3 settings for mispriming library
+        # Update primer3 settings to include the mispriming library
         settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
         #TODO: override settings with user input
-        
-        if self.tagPrimersCheckBox.isChecked():
+        #
+        #
+        #
+        if self.tagPrimersCheckBox.isChecked() or self.pigtailPrimersCheckBox.isChecked():
             self.createTaggedPrimersTable()
-            # setup the settings for tagging primers
-            tag_settings = primer.Settings()
-            tag_settings.reduced(PRIMER_PICK_ANYWAY=1)
+            if self.tagPrimersCheckBox.isChecked():
+                # setup the settings for tagging primers
+                tag_settings = primer.Settings()
+                tag_settings.reduced(PRIMER_PICK_ANYWAY=1) 
         # get the reads with msats from the dbase
         count, sequences = self.getMsatReads()
+        self.pb = QtGui.QProgressDialog("Searching for primers...",\
+            "Cancel", 0, count)
+        self.pb.setWindowModality(QtCore.Qt.WindowModal)
+        index = 0
         for seq in sequences:
-            # de-blob the sequence objects
+            # unpickle the sequence objects
             record = cPickle.loads(str(seq[1]))
             target = '%s,%s' % (seq[2], seq[3]-seq[2])
             primer3 = primer.Primers()
@@ -379,7 +391,11 @@ class Window(QtGui.QWidget, Ui_msatcommander):
             # update dbase tables with primers
             if primer3.primers_designed:
                 self.storePrimers('primers', seq[0], primer3.primers)
-            # tag
+                # if we're only pigtailing the designed primers
+                if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
+                    primer3.pigtail(str(self.pigtailPrimersTagLineEdit.text()))
+                    self.storeTaggedPrimers(seq[0], primer3.tagged_good, primer3.tagged_best_id)
+            # if we are tagging
             if primer3.primers_designed and self.tagPrimersCheckBox.isChecked():
                 cag, m13r, custom = None, None, None
                 if self.cagTagCheckBox.isChecked(): cag = 'CAGTCGGGCGTCATCA'
@@ -387,10 +403,87 @@ class Window(QtGui.QWidget, Ui_msatcommander):
                 if self.customTagCheckBox.isChecked(): custom = str(self.customTagLineEdit.text())
                 primer3.tag(tag_settings, CAG=cag, M13R=m13r, Custom = custom)
                 if primer3.tagged_good:
-                    #pigtail
-
+                    if self.pigtailPrimersCheckBox.isChecked():
+                        primer3.pigtail(str(self.pigtailPrimersTagLineEdit.text()))
+                    #QtCore.pyqtRemoveInputHook()
+                    #pdb.set_trace()
                     #update dbase tables with primers
                     self.storeTaggedPrimers(seq[0], primer3.tagged_good, primer3.tagged_best_id)
+            index += 1
+            # update the progress bar
+            self.pb.setValue(index)
+            # make sure that we abort if triggered
+            if self.pb.wasCanceled():
+                break
+        self.pb.setValue(count)
+    
+    
+    def outputWriter(self, out, extension, header, data):
+        f = open(out, 'w')
+        if extension == 'csv':
+            f.write('%s\n' % ','.join([str(x) for x in header])) 
+            for d in data:
+                f.write('%s\n' % ','.join([str(x) for x in d]))
+        elif extension == 'tdt':
+            f.write('%s\n' % ','.join([str(x) for x in header])) 
+            for d in data:
+                f.write('%s\n' % '\t'.join([str(x) for x in d]))
+        f.close()
+    
+    def outputResults(self):
+        '''write results to some sort of output file'''
+        # set the output format
+        if self.commaSeparatedRadioButton.isChecked():
+            extension = 'csv'
+        elif self.tabDelimitedRadioButton.isChecked():
+            extension = 'tdt'
+        if self.repeatsCheckBox.isChecked():
+            out = 'msatcommander.microsatellites.%s' % extension
+            self.cur.execute('SELECT * from microsatellites')
+            data = self.cur.fetchall()
+            self.cur.execute('PRAGMA table_info(microsatellites)')
+            header = [x[1] for x in self.cur.fetchall()]
+            self.outputWriter(out, extension, header, data)
+        
+        if self.combineLociCheckBox.isChecked():
+            out = 'msatcommander.microsatellites.combined.%s' % extension
+            self.cur.execute('SELECT * from combined_microsatellites')
+        
+        if self.primersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
+            out = 'msatcommander.primers.%s' % extension
+            # get the best unlabelled primers
+            self.cur.execute('SELECT * from primers where primer = 0')
+            data = self.cur.fetchall()
+            self.cur.execute('PRAGMA table_info(primers)')
+            header = [x[1] for x in self.cur.fetchall()]
+            self.outputWriter(out, extension, header, data)
+            #if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
+            #    out = 'msatcommander.pigtailed_primers.%s' % extension
+            #    self.cur.execute('SELECT * from tagged_primers')
+            #    data = self.cur.fetchall()
+            #    self.cur.execute('PRAGMA table_info(tagged_primers)')
+            #    header = [x[1] for x in self.cur.fetchall()]
+            #    self.outputWriter(out, extension, header, data)
+                
+        if self.primersCheckBox.isChecked() and self.taggedPrimersCheckBox.isChecked():
+            self.cur.execute('PRAGMA table_info(primers)')
+            out = 'msatcommander.primers.%s' % extension
+            header = [x[1] for x in self.cur.fetchall()]
+            rows = ['primers.' + x for x in header]
+            rows = ', '.join(rows)
+            # get best primers based on best tagged primers
+            query = '''SELECT %s FROM primers, tagged_primers 
+                WHERE primers.id = tagged_primers.id 
+                AND primers.primer = tagged_primers.primer
+                AND tagged_primers.best = 1''' % rows
+            data = self.cur.execute(query)
+            self.outputWriter(out, extension, header, data)
+            self.cur.execute('PRAGMA table_info(tagged_primers)')
+            out = 'msatcommander.tagged_primers.%s' % extension
+            header = [x[1] for x in self.cur.fetchall()]
+            self.cur.execute('SELECT * from tagged_primers where best = 1')
+            data = self.cur.fetchall()
+            self.outputWriter(out, extension, header, data)
 
 
 if __name__ == "__main__":
