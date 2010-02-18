@@ -5,6 +5,8 @@ import sys
 import msat
 import cPickle
 import sqlite3
+import operator
+#import multiprocessing
 from Bio import SeqIO
 from p3wrapr import primer
 from PyQt4 import QtCore, QtGui
@@ -98,9 +100,9 @@ to output repeats.''')
         self.readSearchSave()
         #if self.combineLociCheckBox.isChecked()
         #    self.combineLoci()
-        if self.designPrimersCheckBox.isChecked():
-            self.designPrimers()
-        self.outputResults()
+        #if self.designPrimersCheckBox.isChecked():
+        #    self.designPrimers()
+        #self.outputResults()
     
     def getMotifs(self):
         '''get the motifs for which we will search from user input'''
@@ -189,21 +191,128 @@ to output repeats.''')
             if temp_match:
                 record.matches[msat.motif[repeat]] = temp_match
     
+    def addLocus(self, combined, bt, ct):
+        '''convenience function to add loci to be combined to the combined tuple'''
+        if not bt in combined:
+            combined += (bt,)
+        if not ct in combined:
+            combined += (ct,)
+        return combined
+    
+    def combineLoci(self, record, min_distance=50):
+        '''combined adjacent loci - this is somewhat cumbersome due to the
+        format of the matches returned from msat (a dict with keys = motif).
+        Essentially, we are running a pairwise comparison across all motifs
+        located to determine which are within a predetermined distance from 
+        one another'''
+        temp_combined = []
+        reorder = ()
+        # turn our dict into something more useful for this purpose
+        for motif in record.matches:
+            for pos,val in enumerate(record.matches[motif]):
+                reorder += ((motif, pos, val[0][0], val[0][1]),)
+        # sort it
+        reorder = sorted(reorder, key=operator.itemgetter(2))
+        # combine adjacent loci at < min_distance
+        for i in reorder:
+            included = False
+            if not temp_combined:
+                temp_combined.append([i])
+            else:
+                for gp, g in enumerate(temp_combined):
+                    for elem in g:
+                        if i[2] - elem[3] <= min_distance:
+                            temp_combined[gp].append(i)
+                            included = True
+                            break
+                if not included:
+                    temp_combined.append([i])
+        # re-key
+        for group in temp_combined:
+            if len(group) > 1:
+                gs = group[0][2]
+                ge = group[-1][2]
+            else:
+                gs, ge = group[0][2], group[0][3]
+            name = ''
+            for pos,member in enumerate(group):
+                if pos + 1 < len(group):
+                    dist = group[pos + 1][3] - group[pos][3]
+                    if dist > 1:
+                        spacer = '...'
+                    else:
+                        spacer = ''
+                else:
+                    spacer = ''
+                name += '%s(%s)%s' % (member[0], (member[3]-member[2])/len(member[0]), spacer)
+            record.combined[name] = (((gs, ge), None, None),)
+            #QtCore.pyqtRemoveInputHook()
+            #pdb.set_trace()
+        return record
+    
     def readSearchSave(self):
         '''read the infile, search the reads for msats'''
+        # setup multiprocessing
         index = 0
         msat_index = 0
         # Setup progress bar - boo-yah!!
         self.pb = QtGui.QProgressDialog("Searching for microsatellites...",\
             "Cancel", 0, self.infileLength)
         self.pb.setWindowModality(QtCore.Qt.WindowModal)
+        
+        if self.designPrimersCheckBox.isChecked():
+            # setup basic primer design parameters
+            settings = primer.Settings()
+            settings.basic()
+            # Update primer3 settings to include the mispriming library
+            settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
+                    
+        if self.tagPrimersCheckBox.isChecked():
+            # setup the settings for tagging primers
+            tag_settings = primer.Settings()
+            tag_settings.reduced(PRIMER_PICK_ANYWAY=1) 
+        
         for record in SeqIO.parse(open(self.infile,'rU'), 'fasta'):
             # add matches attribute to record
             record.matches = {}
+            record.primers = {}
+            record.combined = {}
             # search for the motif in the record.seq; store results in matches
             # attribute, biatch
             for motif in self.collection:
                 self.searchForMotif(record, motif)
+
+            if self.combineLociCheckBox.isChecked():
+                record = self.combineLoci(record)
+            if self.designPrimersCheckBox.isChecked():
+                if record.combined: 
+                    matches = record.combined
+                else:
+                    matches = record.matches
+                for match in matches:
+                    primers = ()
+                    for locations in matches[match]:
+                        QtCore.pyqtRemoveInputHook()
+                        pdb.set_trace()
+                        target = '%s,%s' % (locations[0][0], locations[0][1]-locations[0][0])
+                        primer3 = primer.Primers()
+                        primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
+                        if primer3.primers_designed:
+                            if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
+                                primer3.pigtail(str(self.pigtailPrimersTagLineEdit.text()))
+                            elif self.tagPrimersCheckBox.isChecked():
+                                cag, m13r, custom = None, None, None
+                                if self.cagTagCheckBox.isChecked(): cag = 'CAGTCGGGCGTCATCA'
+                                if self.m13rCheckBox.isChecked(): m13r = 'GGAAACAGCTATGACCAT'
+                                if self.customTagCheckBox.isChecked(): custom = str(self.customTagLineEdit.text())
+                                primer3.tag(tag_settings, CAG=cag, M13R=m13r, Custom = custom)
+                                if primer3.tagged_good:
+                                    if self.pigtailPrimersCheckBox.isChecked():
+                                        primer3.pigtail(str(self.pigtailPrimersTagLineEdit.text()))
+                        
+                        primers += ((primer3),)
+                    record.primers[match] = primers
+
             # pickle the sequence record, because we're gonna use it later
             # and insert it into sqlite (we have to run Binary on it, first)
             rPickle = cPickle.dumps(record, 1)
