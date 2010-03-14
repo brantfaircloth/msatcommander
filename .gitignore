@@ -3,5 +3,9 @@
 *.sqlite
 *.csv
 *.txt
+build/*
+dist/*
+output/*
+testing/*
 primer3_core
 primer3_config/
