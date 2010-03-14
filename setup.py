@@ -6,27 +6,32 @@ Usage:
     % python setup.py py2app
 """
 from setuptools import setup
-import os, sys
+import os, sys, shutil
 
+# add sys.path = [os.path.join(os.environ['RESOURCEPATH'], 'lib', 'python2.6', 'lib-dynload')] + sys.path
+# to dist/msatcommander.app/Contents/Resources/__boot__.py
+
+# remove build directories
+print 'Deleting build dirs...'
+shutil.rmtree('./build')
+shutil.rmtree('./dist')
+print 'Building app...'
 if os.name == 'posix':
     setup(
         name='msatcommander',
-        version='0.8.1',
+        version='0.9.0',
         description='python searching of fasta files for microsat repeats',
         author='Brant C. Faircloth',
-        author_email='brant@uga.edu',
+        author_email='faircloth@gmail.com',
         license='GPL',
-        app=['msatcommander.py'],
+        app=['main.py'],
         setup_requires=["py2app"],
         options=dict(py2app=dict(
-                packages=['Bio'],
-                resources=['primer3-1.1.1/src/primer3_core',
-                'mscGui.xrc', 
-                'mscfunc.py',
-                'mscprimer.py',
-                'mscprimertag.py',
-                'repeatClasses.py',
-                'primer.py']
+                includes=['Bio.SeqIO', 'p3wrapr', 'PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui', 'sip'],
+                packages=[],
+                resources=['primer3_core',
+                'misprime_lib_weight'],
+                excludes=['p3wrapr/.git', 'Bio.nexus', 'Scipy', 'numpy', 'PyQt4.QtDesigner', 'PyQt4.QtNetwork', 'PyQt4.QtOpenGL', 'PyQt4.QtScript', 'PyQt4.QtSql', 'PyQt4.QtTest', 'PyQt4.QtWebKit', 'PyQt4.QtXml', 'PyQt4.phonon']
             ))
     )
     
