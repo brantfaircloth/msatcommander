@@ -28,13 +28,21 @@ import os, sys, shutil
 
 # remove build directories
 print 'Deleting build dirs...'
-shutil.rmtree('./build')
-shutil.rmtree('./dist')
+try:
+    shutil.rmtree('./build')
+except:
+    pass
+try:
+    shutil.rmtree('./dist') 
+except:
+    pass
 print 'Building app...'
 if os.name == 'posix':
+    DIST    = os.path.join(os.getcwd(),'dist')
+    INNARDS = os.path.join(DIST, 'msatcommander.app', 'Contents')
     setup(
         name='msatcommander',
-        version='0.9.0',
+        version='1.0.0-beta',
         description='python searching of fasta files for microsat repeats',
         author='Brant C. Faircloth',
         author_email='faircloth@gmail.com',
@@ -51,12 +59,15 @@ if os.name == 'posix':
                 packages=[],
                 resources=['primer3_core',
                             'misprime_lib_weight',
-                            'primer3_config'],
+                            'primer3_config',
+                            'qt.conf'],
                 excludes=['/Users/bcf/git/brant/modules/p3wrapr/docs/',
                             '/Users/bcf/git/brant/modules/p3wrapr/.git',
                             'Bio.nexus',
                             'Scipy',
                             'numpy',
+                            'PyQt4.QtCore_debug',
+                            'PyQt4.QtGui_debug',
                             'PyQt4.QtDesigner',
                             'PyQt4.QtNetwork',
                             'PyQt4.QtOpenGL',
@@ -68,6 +79,17 @@ if os.name == 'posix':
                             'PyQt4.phonon']
             ))
     )
+    ## post-flight
+    # make primer3 core executable
+    print '\n\nSetting primer3_core to executable...'
+    os.chmod(os.path.join(INNARDS, 'Resources','primer3_core'), 0755)
+    print 'Removing QtCore_debug and QtGui_debug...'
+    for p in [  ( "Frameworks", "QtGui.framework", "Versions", "4", "QtGui_debug" ),
+                ( "Frameworks", "QtGui.framework", "QtGui_debug"),
+                ( "Frameworks", "QtCore.framework", "Versions", "4", "QtCore_debug" ),
+                ( "Frameworks", "QtCore.framework", "QtCore_debug" )]:
+        db_path = os.path.join(INNARDS, *p)
+        os.system(' '.join([ 'rm -rf', db_path]))
     
 elif os.name == 'nt':
     from distutils.core import setup
