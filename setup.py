@@ -37,12 +37,18 @@ try:
 except:
     pass
 print 'Building app...'
+
+VER = '1.0.0-alpha'
+NAME = 'msatcommander'
+APPNAME = '%s-%s' % (NAME, VER)
+FULLAPPNAME = '%s.app' % APPNAME
+
 if os.name == 'posix':
     DIST    = os.path.join(os.getcwd(),'dist')
-    INNARDS = os.path.join(DIST, 'msatcommander.app', 'Contents')
+    INNARDS = os.path.join(DIST, FULLAPPNAME, 'Contents')
     setup(
-        name='msatcommander',
-        version='1.0.0-beta',
+        name=APPNAME,
+        version=VER,
         description='python searching of fasta files for microsat repeats',
         author='Brant C. Faircloth',
         author_email='faircloth@gmail.com',
@@ -51,7 +57,6 @@ if os.name == 'posix':
         setup_requires=["py2app"],
         options=dict(py2app=dict(
                 includes=['Bio.SeqIO',
-                            'p3wrapr',
                             'PyQt4',
                             'PyQt4.QtCore',
                             'PyQt4.QtGui',
@@ -61,9 +66,10 @@ if os.name == 'posix':
                             'misprime_lib_weight',
                             'primer3_config',
                             'qt.conf'],
-                excludes=['/Users/bcf/git/brant/modules/p3wrapr/docs/',
-                            '/Users/bcf/git/brant/modules/p3wrapr/.git',
-                            'Bio.nexus',
+                excludes=['modules.p3wrapr.docs',
+                            'modules.p3wrapr.git',
+                            'Bio.Nexus',
+                            'Bio.Entrez',
                             'Scipy',
                             'numpy',
                             'PyQt4.QtCore_debug',
