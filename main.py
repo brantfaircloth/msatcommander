@@ -2,13 +2,13 @@
 
 import os
 import sys
-import msat
 import cPickle
-import sqlite3
+from pysqlite2 import dbapi2 as sqlite3
 import operator
 #import multiprocessing
 from Bio import SeqIO
-from p3wrapr import primer
+from modules import msat
+from modules.p3wrapr import primer
 from PyQt4 import QtCore, QtGui
 from ui_msatcommander import Ui_msatcommander
 
@@ -40,6 +40,8 @@ class Window(QtGui.QWidget, Ui_msatcommander):
         '''get the directory to save the resutls'''
         self.outdir = QtGui.QFileDialog.getExistingDirectory(self,\
             "Select Directory to Save", "~/", QtGui.QFileDialog.ShowDirsOnly)
+        if not self.outdir:
+            self.outdir = None
     
     def close(self):
         '''quit the program'''
@@ -88,8 +90,6 @@ class Window(QtGui.QWidget, Ui_msatcommander):
     def clickTagPrimersCheckBox(self):
         '''when you click the design primers check box, select to output 
         primer files.  When unclicked, deselect what was selected.'''
-        #QtCore.pyqtRemoveInputHook()
-        #pdb.set_trace()
         # if it's being checked
         if self.tagPrimersCheckBox.isChecked():
             if not self.designPrimersCheckBox.checkState():
@@ -184,12 +184,13 @@ to output repeats.''')
             self.open()
             if self.infile:
                 self.save()
-                self.createDbase()
-                motifs = self.getMotifs()
-                lengths = self.getLengths()
-                self.generateCollection(motifs, lengths)
-                self.readSearchSave()
-                self.outputResults()
+                if self.outdir:
+                    self.createDbase()
+                    motifs = self.getMotifs()
+                    lengths = self.getLengths()
+                    self.generateCollection(motifs, lengths)
+                    self.readSearchSave()
+                    self.outputResults()
     
     def getMotifs(self):
         '''get the motifs for which we will search from user input'''
@@ -372,27 +373,27 @@ to output repeats.''')
             # Update primer3 settings to include the mispriming library
             settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
             # Update the primer3 settings with user choices/defaults:
-            #settings.params['PRIMER_PRODUCT_SIZE_RANGE'] = str(self.primerProductSizeTextBox.text())
-            #settings.params['PRIMER_MIN_TM']             = float(self.primerMinTmSpinBox.value())
-            #settings.params['PRIMER_OPT_TM']             = float(self.primerOptTmSpinBox.value())
-            #settings.params['PRIMER_MAX_TM']             = float(self.primerMaxTmSpinBox.value())
-            #settings.params['PRIMER_MIN_SIZE']           = int(self.primerMinSizeSpinBox.value())
-            #settings.params['PRIMER_OPT_SIZE']           = int(self.primerOptSizeSpinBox.value())
-            #settings.params['PRIMER_MAX_SIZE']           = int(self.primerMaxSizeSpinBox.value())
-            #settings.params['PRIMER_MIN_GC']             = float(self.primerMinGcSpinBox.value())
-            #settings.params['PRIMER_MAX_GC']             = float(self.primerMaxGcSpinBox.value())
-            #settings.params['PRIMER_MAX_POLY_X']         = int(self.primerMaxPolyXSpinBox.value())
-            #settings.params['PRIMER_MAX_SELF_ANY_TH']           = float(self.primerMaxSelfAnySpinBox.value())
-            #settings.params['PRIMER_PAIR_MAX_COMPL_ANY_TH']     = float(self.primerMaxPairAnySpinBox.value())
-            #settings.params['PRIMER_MAX_SELF_END_TH']           = float(self.primerMaxSelfEndSpinBox.value())
-            #settings.params['PRIMER_PAIR_MAX_COMPL_END_TH']     = float(self.primerMaxPairEndSpinBox.value())
-            #settings.params['PRIMER_MAX_HAIRPIN']               = float(self.primerMaxSelfHairpinSpinBox.value())
-            #settings.params['PRIMER_PAIR_MAX_HAIRPIN']          = float(self.primerMaxPairHairpinSpinBox.value())
-            #settings.params['PRIMER_MAX_END_STABILITY']         = float(self.primerMaxEndStabilitySpinBox.value())
-            #if self.primerGCClampCheckBox.isChecked:
-            #    settings.params['PRIMER_GC_CLAMP']              = 1
-            #else:
-            #    settings.params['PRIMER_GC_CLAMP']              = 0
+            settings.params['PRIMER_PRODUCT_SIZE_RANGE'] = str(self.primerProductSizeTextBox.text())
+            settings.params['PRIMER_MIN_TM']             = float(self.primerMinTmSpinBox.value())
+            settings.params['PRIMER_OPT_TM']             = float(self.primerOptTmSpinBox.value())
+            settings.params['PRIMER_MAX_TM']             = float(self.primerMaxTmSpinBox.value())
+            settings.params['PRIMER_MIN_SIZE']           = int(self.primerMinSizeSpinBox.value())
+            settings.params['PRIMER_OPT_SIZE']           = int(self.primerOptSizeSpinBox.value())
+            settings.params['PRIMER_MAX_SIZE']           = int(self.primerMaxSizeSpinBox.value())
+            settings.params['PRIMER_MIN_GC']             = float(self.primerMinGcSpinBox.value())
+            settings.params['PRIMER_MAX_GC']             = float(self.primerMaxGcSpinBox.value())
+            settings.params['PRIMER_MAX_POLY_X']         = int(self.primerMaxPolyXSpinBox.value())
+            settings.params['PRIMER_MAX_SELF_ANY_TH']           = float(self.primerMaxSelfAnySpinBox.value())
+            settings.params['PRIMER_PAIR_MAX_COMPL_ANY_TH']     = float(self.primerMaxPairAnySpinBox.value())
+            settings.params['PRIMER_MAX_SELF_END_TH']           = float(self.primerMaxSelfEndSpinBox.value())
+            settings.params['PRIMER_PAIR_MAX_COMPL_END_TH']     = float(self.primerMaxPairEndSpinBox.value())
+            settings.params['PRIMER_MAX_HAIRPIN']               = float(self.primerMaxSelfHairpinSpinBox.value())
+            settings.params['PRIMER_PAIR_MAX_HAIRPIN']          = float(self.primerMaxPairHairpinSpinBox.value())
+            settings.params['PRIMER_MAX_END_STABILITY']         = float(self.primerMaxEndStabilitySpinBox.value())
+            if self.primerGCClampCheckBox.isChecked:
+                settings.params['PRIMER_GC_CLAMP']              = 1
+            else:
+                settings.params['PRIMER_GC_CLAMP']              = 0
             # create the primers table
             self.createPrimersTable()
                     
@@ -401,11 +402,11 @@ to output repeats.''')
             tag_settings = primer.Settings()
             tag_settings.reduced(os.path.join(os.getcwd(), 'primer3_config/'), PRIMER_PICK_ANYWAY=1)
             # create the tagged primers table
-            #QtCore.pyqtRemoveInputHook()
-            #pdb.set_trace()
             self.createTaggedPrimersTable()
             
         for record in SeqIO.parse(open(self.infile,'rU'), 'fasta'):
+            #QtCore.pyqtRemoveInputHook()
+            #pdb.set_trace()
             # add matches attribute to record
             record.matches = {}
             record.combined = {}
@@ -424,8 +425,6 @@ to output repeats.''')
                 for match in matches:
                     primers = ()
                     for locations in matches[match]:
-                        #QtCore.pyqtRemoveInputHook()
-                        #pdb.set_trace()
                         target = '%s,%s' % (locations[0][0], locations[0][1]-locations[0][0])
                         primer3 = primer.Primers(binary=os.path.join(os.getcwd(), 'primer3_core'))
                         primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
@@ -443,16 +442,12 @@ to output repeats.''')
                                         primer3.pigtail(tag_settings, str(self.pigtailPrimersTagLineEdit.text()))
                         primers += ((primer3),)
                     record.primers[match] = primers
-            #QtCore.pyqtRemoveInputHook()
-            #pdb.set_trace()  
             # insert the referential integrity data first
             self.cur.execute('''INSERT INTO records (id, name) VALUES (?,?)'''\
                 , (index, record.name))
             # if we are keeping the sequence reads pickle the sequence record, 
             # because we're gonna use it later and insert it into sqlite (we 
             # have to run Binary on it, first)
-            #QtCore.pyqtRemoveInputHook()
-            #pdb.set_trace()
             if self.keepDbaseSequenceRecords.isChecked():
                 rPickle = cPickle.dumps(record, 1)
                 self.cur.execute('''INSERT INTO sequences (id, seq) VALUES (?,?)'''\
@@ -478,8 +473,6 @@ to output repeats.''')
                         combine_index += 1
             
             if record.primers:
-                #QtCore.pyqtRemoveInputHook()
-                #pdb.set_trace()
                 if not self.combineLociCheckBox.isChecked():
                     self.storePrimers(index, msat_index, record)
                 else:
@@ -572,34 +565,6 @@ to output repeats.''')
             FOREIGN KEY(msats_id) REFERENCES microsatellites(id)
             )''')
         self.conn.commit() 
-    
-    def getMsatReads(self):
-        '''get microsatellite containing reads from the database'''
-        if not self.combineLociCheckBox.isChecked():
-            self.cur.execute('''SELECT count(*) FROM microsatellites''')
-            count = self.cur.fetchall()[0][0]
-            self.cur.execute('''SELECT 
-                sequences.id,
-                sequences.seq,
-                microsatellites.id,
-                microsatellites.start,
-                microsatellites.end
-                FROM sequences, microsatellites
-                WHERE sequences.id = microsatellites.records_id
-                ''')
-        else:
-            self.cur.execute('''SELECT count(*) FROM combined_microsatellites''')
-            count = self.cur.fetchall()[0][0]
-            self.cur.execute('''SELECT sequences.id,
-                sequences.seq,
-                combined_microsatellites.start,
-                combined_microsatellites.end
-                FROM sequences, combined_microsatellites
-                WHERE sequences.id = combined_microsatellites.id
-                ''')
-        sequences = self.cur.fetchall()
-        return count, sequences
-    
     
     def storePrimers(self, record_id, msat_id, record):
         '''store primers in the database'''
@@ -706,66 +671,7 @@ to output repeats.''')
                             AND tagged = ?''',
                             (record_id, msat_id, best[0], best[1], side))
         self.conn.commit()
-    
-    def designPrimers(self):
-        '''design primers for those reads possessing msat repeats'''
-        self.createPrimersTable('primers')
-        # setup basic primer design parameters
-        settings = primer.Settings()
-        settings.basic()
-        # Update primer3 settings to include the mispriming library
-        settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
-        #TODO: override settings with user input
-        #
-        #
-        #
-        if self.tagPrimersCheckBox.isChecked() or self.pigtailPrimersCheckBox.isChecked():
-            self.createTaggedPrimersTable()
-            # setup the settings for tagging primers
-            tag_settings = primer.Settings()
-            tag_settings.reduced(PRIMER_PICK_ANYWAY=1) 
-        # get the reads with msats from the dbase
-        count, sequences = self.getMsatReads()
-        self.pb = QtGui.QProgressDialog("Searching for primers...",\
-            "Cancel", 0, count)
-        self.pb.setWindowModality(QtCore.Qt.WindowModal)
-        index = 0
-        for seq in sequences:
-            # unpickle the sequence objects
-            record = cPickle.loads(str(seq[1]))
-            target = '%s,%s' % (seq[3], seq[4]-seq[3])
-            primer3 = primer.Primers()
-            primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
-            # update dbase tables with primers
-            if primer3.primers_designed:
-                self.storePrimers('primers', seq[0], seq[2], primer3.primers)
-                # if we're only pigtailing the designed primers
-                if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
-                    primer3.pigtail(str(self.pigtailPrimersTagLineEdit.text()))
-                    self.storeTaggedPrimers(seq[0], primer3.tagged_good, primer3.tagged_best_id)
-            # if we are tagging
-            if primer3.primers_designed and self.tagPrimersCheckBox.isChecked():
-                cag, m13r, custom = None, None, None
-                if self.cagTagCheckBox.isChecked(): cag = 'CAGTCGGGCGTCATCA'
-                if self.m13rCheckBox.isChecked(): m13r = 'GGAAACAGCTATGACCAT'
-                if self.customTagCheckBox.isChecked(): custom = str(self.customTagLineEdit.text())
-                primer3.tag(tag_settings, CAG=cag, M13R=m13r, Custom = custom)
-                if primer3.tagged_good:
-                    if self.pigtailPrimersCheckBox.isChecked():
-                        primer3.pigtail(str(self.pigtailPrimersTagLineEdit.text()))
-                    #QtCore.pyqtRemoveInputHook()
-                    #pdb.set_trace()
-                    #update dbase tables with primers
-                    self.storeTaggedPrimers(seq[0], seq[2], primer3.tagged_good, primer3.tagged_best_id)
-            index += 1
-            # update the progress bar
-            self.pb.setValue(index)
-            # make sure that we abort if triggered
-            if self.pb.wasCanceled():
-                break
-        self.pb.setValue(count)
-    
-    
+        
     def outputWriter(self, out, extension, header, data):
         outpath = os.path.join(str(self.outdir), out)
         f = open(outpath, 'w')
