@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/msatcommander.ui'
 #
-# Created: Mon Mar 15 13:51:18 2010
+# Created: Mon Mar 15 22:41:07 2010
 #      by: PyQt4 UI code generator 4.7
 #
 # WARNING! All changes made in this file will be lost!
@@ -397,7 +397,7 @@ class Ui_msatcommander(object):
         msatcommander.setTabOrder(self.customTagCheckBox, self.hexanucSpinBox)
 
     def retranslateUi(self, msatcommander):
-        msatcommander.setWindowTitle(QtGui.QApplication.translate("msatcommander", "msatcommander-1.0.0-beta", None, QtGui.QApplication.UnicodeUTF8))
+        msatcommander.setWindowTitle(QtGui.QApplication.translate("msatcommander", "msatcommander-1.0.0-alpha", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox.setTitle(QtGui.QApplication.translate("msatcommander", "Search Parameters", None, QtGui.QApplication.UnicodeUTF8))
         self.dinucCheckBox.setText(QtGui.QApplication.translate("msatcommander", "Dinucleotide", None, QtGui.QApplication.UnicodeUTF8))
         self.pentanucCheckBox.setText(QtGui.QApplication.translate("msatcommander", "Pentanucleotide", None, QtGui.QApplication.UnicodeUTF8))
@@ -428,7 +428,7 @@ class Ui_msatcommander(object):
         self.keepDatabaseCheckBox.setText(QtGui.QApplication.translate("msatcommander", "Keep Database", None, QtGui.QApplication.UnicodeUTF8))
         self.keepDbaseSequenceRecords.setText(QtGui.QApplication.translate("msatcommander", "Keep Sequence Records", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QtGui.QApplication.translate("msatcommander", "General", None, QtGui.QApplication.UnicodeUTF8))
-        self.groupBox_5.setTitle(QtGui.QApplication.translate("msatcommander", "Primer Sizes", None, QtGui.QApplication.UnicodeUTF8))
+        self.groupBox_5.setTitle(QtGui.QApplication.translate("msatcommander", "Primer Sizes (BP)", None, QtGui.QApplication.UnicodeUTF8))
         self.label_4.setText(QtGui.QApplication.translate("msatcommander", "Primer Min Size", None, QtGui.QApplication.UnicodeUTF8))
         self.label_7.setText(QtGui.QApplication.translate("msatcommander", "Primer Opt Size", None, QtGui.QApplication.UnicodeUTF8))
         self.label_8.setText(QtGui.QApplication.translate("msatcommander", "Primer Max Size", None, QtGui.QApplication.UnicodeUTF8))
@@ -436,16 +436,16 @@ class Ui_msatcommander(object):
         self.label_5.setText(QtGui.QApplication.translate("msatcommander", "Product Size", None, QtGui.QApplication.UnicodeUTF8))
         self.primerProductSizeTextBox.setText(QtGui.QApplication.translate("msatcommander", "100-450", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("msatcommander", "Space separated list of ranges.  E.g.:  100-200 200-300 300-400", None, QtGui.QApplication.UnicodeUTF8))
-        self.groupBox_7.setTitle(QtGui.QApplication.translate("msatcommander", "Primer Tms", None, QtGui.QApplication.UnicodeUTF8))
+        self.groupBox_7.setTitle(QtGui.QApplication.translate("msatcommander", "Primer Tms (Celsius)", None, QtGui.QApplication.UnicodeUTF8))
         self.label_6.setText(QtGui.QApplication.translate("msatcommander", "Primer Min Tm", None, QtGui.QApplication.UnicodeUTF8))
         self.label_9.setText(QtGui.QApplication.translate("msatcommander", "Primer Opt Tm", None, QtGui.QApplication.UnicodeUTF8))
         self.label_10.setText(QtGui.QApplication.translate("msatcommander", "Primer Max Tm", None, QtGui.QApplication.UnicodeUTF8))
-        self.groupBox_10.setTitle(QtGui.QApplication.translate("msatcommander", "GC Content", None, QtGui.QApplication.UnicodeUTF8))
+        self.groupBox_10.setTitle(QtGui.QApplication.translate("msatcommander", "GC Content (%)", None, QtGui.QApplication.UnicodeUTF8))
         self.label_2.setText(QtGui.QApplication.translate("msatcommander", "Primer Min GC", None, QtGui.QApplication.UnicodeUTF8))
         self.label_3.setText(QtGui.QApplication.translate("msatcommander", "Primer Max GC", None, QtGui.QApplication.UnicodeUTF8))
-        self.groupBox_11.setTitle(QtGui.QApplication.translate("msatcommander", "PolyX", None, QtGui.QApplication.UnicodeUTF8))
+        self.groupBox_11.setTitle(QtGui.QApplication.translate("msatcommander", "PolyX (BP)", None, QtGui.QApplication.UnicodeUTF8))
         self.label_11.setText(QtGui.QApplication.translate("msatcommander", "Max polyX", None, QtGui.QApplication.UnicodeUTF8))
-        self.groupBox_12.setTitle(QtGui.QApplication.translate("msatcommander", "Complementarity", None, QtGui.QApplication.UnicodeUTF8))
+        self.groupBox_12.setTitle(QtGui.QApplication.translate("msatcommander", "Complementarity (Celsius)", None, QtGui.QApplication.UnicodeUTF8))
         self.label_12.setText(QtGui.QApplication.translate("msatcommander", "Max, self, any", None, QtGui.QApplication.UnicodeUTF8))
         self.label_13.setText(QtGui.QApplication.translate("msatcommander", "Max, self, end", None, QtGui.QApplication.UnicodeUTF8))
         self.label_14.setText(QtGui.QApplication.translate("msatcommander", "Max, pair, any", None, QtGui.QApplication.UnicodeUTF8))
