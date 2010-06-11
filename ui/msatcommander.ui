@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>msatcommander-1.0.0-beta</string>
+   <string>msatcommander-1.0.0-alpha</string>
   </property>
   <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
@@ -26,7 +26,7 @@
     <bool>false</bool>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <property name="usesScrollButtons">
     <bool>false</bool>
