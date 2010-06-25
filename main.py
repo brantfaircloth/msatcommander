@@ -7,8 +7,8 @@ from pysqlite2 import dbapi2 as sqlite3
 import operator
 #import multiprocessing
 from Bio import SeqIO
-from modules import msat
-from modules.p3wrapr import primer
+import msat
+from p3wrapr import primer
 from PyQt4 import QtCore, QtGui
 from ui_msatcommander import Ui_msatcommander
 
