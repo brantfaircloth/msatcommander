@@ -42,6 +42,18 @@ VER = '1.0.0-alpha'
 NAME = 'msatcommander'
 APPNAME = '%s-%s' % (NAME, VER)
 FULLAPPNAME = '%s.app' % APPNAME
+AUTHOR = 'Brant Faircloth'
+YEAR = 2010
+
+PLIST = dict(CFBundleName = APPNAME,
+             CFBundleShortVersionString = VER,
+             CFBundleGetInfoString = NAME + " " + VER,
+             CFBundleExecutable = NAME + " " + VER,
+             CFBundleIdentifier = "org.brantfaircloth.%s" % APPNAME,
+             CFBundleDevelopmentRegion = 'English',
+             NSHumanReadableCopyright = u"Copyright %s 2008-%d" % (AUTHOR, YEAR),
+             CFBundleIconFile='mc.icns'
+             )
 
 if os.name == 'posix':
     DIST    = os.path.join(os.getcwd(),'dist')
@@ -55,21 +67,27 @@ if os.name == 'posix':
         license='GPL',
         app=['main.py'],
         setup_requires=["py2app"],
+        data_files=[
+            ('msat', ['/Users/bcf/git/brant/modules/msat/__init__.py','/Users/bcf/git/brant/modules/msat/motif.py','/Users/bcf/git/brant/modules/msat/seqsearch.py']),
+            ('p3wrapr', ['/Users/bcf/git/brant/modules/p3wrapr/__init__.py','/Users/bcf/git/brant/modules/p3wrapr/primer.py']),
+        ],
         options=dict(py2app=dict(
                 includes=['Bio.SeqIO',
                             'PyQt4',
                             'PyQt4.QtCore',
                             'PyQt4.QtGui',
-                            'sip'],
+                            'sip',
+                            'shutil'],
+                plist = PLIST,
                 packages=[],
+                iconfile='icon/mc.icns',
                 resources=['primer3_core',
                             'misprime_lib_weight',
                             'primer3_config',
                             'qt.conf'],
-                excludes=['modules.p3wrapr.docs',
-                            'modules.p3wrapr.git',
-                            'Bio.Nexus',
-                            'Bio.Entrez',
+                excludes=[  'Bio.Genbank',
+                            'modules.p3wrapr',
+                            'modules.msat',
                             'Scipy',
                             'numpy',
                             'PyQt4.QtCore_debug',
