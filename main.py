@@ -244,12 +244,15 @@ to output repeats.''')
             self.conn = sqlite3.connect(":memory:")
         self.cur = self.conn.cursor()
         # drop existing tables
-        self.cur.execute('''DROP TABLE IF EXISTS records''')
+        self.cur.execute('''DROP TABLE IF EXISTS combined_components''')
         self.cur.execute('''DROP TABLE IF EXISTS sequences''')
         self.cur.execute('''DROP TABLE IF EXISTS microsatellites''')
-        self.cur.execute('''DROP TABLE IF EXISTS combined''')
         self.cur.execute('''DROP TABLE IF EXISTS primers''')
         self.cur.execute('''DROP TABLE IF EXISTS tagged''')
+        self.cur.execute('''DROP TABLE IF EXISTS combined''')
+        self.cur.execute('''DROP TABLE IF EXISTS records''')
+        # turn on foreign key support
+        self.cur.execute('''PRAGMA foreign_keys = ON''')
         # create the sequence table
         self.cur.execute('''CREATE TABLE records (
         id int,
@@ -281,8 +284,20 @@ to output repeats.''')
             motif text,
             start int,
             end int,
+            preceding int,
+            following int,
+            members int,
+            PRIMARY KEY(records_id, id)
             FOREIGN KEY(records_id) REFERENCES records(id)
             )''')
+            self.cur.execute('''CREATE TABLE combined_components (
+            records_id int,
+            combined_id int,
+            motif text,
+            length int,
+            FOREIGN KEY(records_id, combined_id) REFERENCES combined(records_id, id)
+            )''')
+            
         #TODO: move commit until after all operations?
         self.conn.commit()
     
@@ -314,7 +329,7 @@ to output repeats.''')
         # turn our dict into something more useful for this purpose
         for motif in record.matches:
             for pos,val in enumerate(record.matches[motif]):
-                reorder += ((motif, pos, val[0][0], val[0][1]),)
+                reorder += ((motif, pos, val[0][0], val[0][1], val[1], val[2]),)
         # sort it
         reorder = sorted(reorder, key=operator.itemgetter(2))
         # combine adjacent loci at < min_distance
@@ -333,12 +348,17 @@ to output repeats.''')
                     temp_combined.append([i])
         # re-key
         for group in temp_combined:
+            motifs = []
             if len(group) > 1:
                 gs = group[0][2]
                 ge = group[-1][2]
+                gp = group[0][4]
+                gf = group[-1][5]
             else:
                 gs, ge = group[0][2], group[0][3]
+                gp, gf = group[0][4], group[0][5]
             name = ''
+            member_count = 0
             for pos,member in enumerate(group):
                 if pos + 1 < len(group):
                     dist = group[pos + 1][3] - group[pos][3]
@@ -348,8 +368,11 @@ to output repeats.''')
                         spacer = ''
                 else:
                     spacer = ''
-                name += '%s(%s)%s' % (member[0], (member[3]-member[2])/len(member[0]), spacer)
-            record.combined[name] = (((gs, ge), None, None),)
+                length = (member[3]-member[2])/len(member[0])
+                name += '%s(%s)%s' % (member[0], length, spacer)
+                motifs.append([member[0],length])
+                member_count += 1
+            record.combined[name] = (((gs, ge), gp, gf, member_count, motifs),)
             #QtCore.pyqtRemoveInputHook()
             #pdb.set_trace()
         return record
@@ -468,8 +491,14 @@ to output repeats.''')
                 for match in record.combined:
                     for motif in record.combined[match]:
                         self.cur.execute('''INSERT INTO combined \
-                            (records_id, id, motif, start, end) VALUES (?,?,?,?,?)''', \
-                            (index, combine_index, match, motif[0][0],motif[0][1]))
+                            (records_id, id, motif, start, end, preceding, \
+                            following, members) VALUES (?,?,?,?,?,?,?,?)''', \
+                            (index, combine_index, match, motif[0][0], \
+                            motif[0][1], motif[1], motif[2], motif[3]))
+                        for m in motif[4]:
+                            self.cur.execute('''INSERT INTO combined_components \
+                            (records_id, combined_id, motif, length) VALUES \
+                            (?,?,?,?)''', (index, combine_index, m[0], m[1]))
                         combine_index += 1
             
             if record.primers:
