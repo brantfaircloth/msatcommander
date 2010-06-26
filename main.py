@@ -351,7 +351,7 @@ to output repeats.''')
             motifs = []
             if len(group) > 1:
                 gs = group[0][2]
-                ge = group[-1][2]
+                ge = group[-1][3]
                 gp = group[0][4]
                 gf = group[-1][5]
             else:

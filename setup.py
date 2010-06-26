@@ -38,7 +38,7 @@ except:
     pass
 print 'Building app...'
 
-VER = '1.0.0-alpha'
+VER = '1.0.1-alpha'
 NAME = 'msatcommander'
 APPNAME = '%s-%s' % (NAME, VER)
 FULLAPPNAME = '%s.app' % APPNAME
