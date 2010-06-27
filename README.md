@@ -4,9 +4,9 @@ msatcommander is a python program written to locate microsatellite (SSR, VNTR, &
 
 ### Other links ###
 
-application bundles: http://code.google.com/p/msatcommander/downloads/list
+application bundles: [http://code.google.com/p/msatcommander/downloads/list](http://code.google.com/p/msatcommander/downloads/list)
 
-documentation: http://brantfaircloth.github.com/msatcommander/ (in progress)
+documentation: [http://brantfaircloth.github.com/msatcommander/](http://brantfaircloth.github.com/msatcommander/) (in progress)
 
 ### Additional information ###
 
