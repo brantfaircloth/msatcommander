@@ -759,7 +759,7 @@ to output repeats.''')
                                 :PRIMER_RIGHT_SELF_ANY_TH,
                                 :PRIMER_RIGHT_HAIRPIN_TH,
                                 :PRIMER_RIGHT_PENALTY,
-                                :PRIMER_PAIR_PRODUCT_SIZE,
+                                :PRIMER_TAG_PRODUCT_SIZE,
                                 :PRIMER_PAIR_COMPL_END_TH,
                                 :PRIMER_PAIR_COMPL_ANY_TH,
                                 :PRIMER_PAIR_PENALTY
@@ -842,6 +842,8 @@ to output repeats.''')
                 records, primers where records.id = primers.records_id and 
                 primers.primer = 0''')
             header = [_[0] for _ in self.cur.description]
+            if self.combineLociCheckBox.isChecked():
+                header[2] = 'combined_id'
             data = self.cur.fetchall()
             self.outputWriter(out, extension, header, data)
         
@@ -850,7 +852,7 @@ to output repeats.''')
         #
         # This will return *only* the primers matching the best pigtailed
         # primers
-        if self.designPrimersCheckBox.isChecked() \
+        elif self.designPrimersCheckBox.isChecked() \
                 and self.primersCheckBox.isChecked() \
                 and self.pigtailPrimersCheckBox.isChecked() \
                 and not self.tagPrimersCheckBox.isChecked():
@@ -896,6 +898,8 @@ to output repeats.''')
             #QtCore.pyqtRemoveInputHook()
             #pdb.set_trace()
             header = [_[0] for _ in self.cur.description]
+            if self.combineLociCheckBox.isChecked():
+                header[2] = 'combined_id'
             data = self.cur.fetchall()
             self.outputWriter(out, extension, header, data)
         
@@ -904,7 +908,7 @@ to output repeats.''')
         #
         # This will return the best tagged primers and only the 
         # untagged primers matching the best tagged primers
-        if self.designPrimersCheckBox.isChecked() \
+        elif self.designPrimersCheckBox.isChecked() \
                 and self.taggedPrimersCheckBox.isChecked():
             out = 'msatcommander.primers.%s' % extension
             # get best primers based on best tagged primers
@@ -917,6 +921,8 @@ to output repeats.''')
                 AND tagged.best = 1'''
             self.cur.execute(query)
             header = [_[0] for _ in self.cur.description]
+            if self.combineLociCheckBox.isChecked():
+                header[2] = 'combined_id'
             data = self.cur.fetchall()
             self.outputWriter(out, extension, header, data)
             # get the tagged primers
@@ -926,6 +932,8 @@ to output repeats.''')
                 tagged.records_id = records.id 
                 AND tagged.best = 1''')
             header = [_[0] for _ in self.cur.description]
+            if self.combineLociCheckBox.isChecked():
+                header[2] = 'combined_id'
             data = self.cur.fetchall()
             self.outputWriter(out, extension, header, data)
 
