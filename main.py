@@ -275,6 +275,7 @@ to output repeats.''')
         preceding int,
         following int,
         count int,
+        PRIMARY KEY(records_id, id),
         FOREIGN KEY(records_id) REFERENCES records(id)
         )''')
         if self.combineLociCheckBox.isChecked():
@@ -418,14 +419,20 @@ to output repeats.''')
             else:
                 settings.params['PRIMER_GC_CLAMP']              = 0
             # create the primers table
-            self.createPrimersTable()
+            if self.combineLociCheckBox.isChecked():
+                self.createPrimersTable(combined = True)
+            else:
+                self.createPrimersTable()
                     
         if self.tagPrimersCheckBox.isChecked() or self.pigtailPrimersCheckBox.isChecked():
             # setup the settings for tagging primers
             tag_settings = primer.Settings()
             tag_settings.reduced(os.path.join(os.getcwd(), 'primer3_config/'), PRIMER_PICK_ANYWAY=1)
             # create the tagged primers table
-            self.createTaggedPrimersTable()
+            if self.combineLociCheckBox.isChecked():
+                self.createTaggedPrimersTable(combined = True)
+            else:
+                self.createTaggedPrimersTable()
             
         for record in SeqIO.parse(open(self.infile,'rU'), 'fasta'):
             #QtCore.pyqtRemoveInputHook()
@@ -466,8 +473,8 @@ to output repeats.''')
                         primers += ((primer3),)
                     record.primers[match] = primers
             # insert the referential integrity data first
-            self.cur.execute('''INSERT INTO records (id, name) VALUES (?,?)'''\
-                , (index, record.name))
+            self.cur.execute('''INSERT INTO records (id, name) VALUES (?,?)''', 
+                    (index, record.name))
             # if we are keeping the sequence reads pickle the sequence record, 
             # because we're gonna use it later and insert it into sqlite (we 
             # have to run Binary on it, first)
@@ -477,17 +484,38 @@ to output repeats.''')
                 , (index, sqlite3.Binary(rPickle)))
             
             # go through the motifs and insert them to the dbase
-            for match in record.matches:
-                for motif in record.matches[match]:
-                    count = (motif[0][1] - motif[0][0])/len(match)
-                    self.cur.execute('''INSERT INTO microsatellites \
-                        (records_id, id, motif, start, end, preceding, \
-                        following, count) VALUES (?,?,?,?,?,?,?,?)''', \
-                        (index, msat_index, match, motif[0][0],motif[0][1], \
-                        motif[1], motif[2], count))
-                    msat_index += 1
+            #QtCore.pyqtRemoveInputHook()
+            #pdb.set_trace()
+            if not self.combineLociCheckBox.isChecked():
+                for match in record.matches:
+                    for motif in record.matches[match]:
+                        count = (motif[0][1] - motif[0][0])/len(match)
+                        self.cur.execute('''INSERT INTO microsatellites \
+                            (records_id, id, motif, start, end, preceding, \
+                            following, count) VALUES (?,?,?,?,?,?,?,?)''', \
+                            (index, msat_index, match, motif[0][0],motif[0][1], \
+                            motif[1], motif[2], count))
+                        self.conn.commit()
+                        if record.primers:
+                            self.storePrimers(index, msat_index, record)
+                        if record.primers \
+                            and (self.pigtailPrimersCheckBox.isChecked() \
+                            or self.tagPrimersCheckBox.isChecked()):
+                            self.storeTaggedPrimers(index, msat_index, record)
+                        msat_index += 1
             
             if self.combineLociCheckBox.isChecked():
+                # enter the microsatellite data
+                for match in record.matches:
+                    for motif in record.matches[match]:
+                        count = (motif[0][1] - motif[0][0])/len(match)
+                        self.cur.execute('''INSERT INTO microsatellites \
+                            (records_id, id, motif, start, end, preceding, \
+                            following, count) VALUES (?,?,?,?,?,?,?,?)''', \
+                            (index, msat_index, match, motif[0][0],motif[0][1], \
+                            motif[1], motif[2], count))
+                        msat_index += 1
+                # enter the combined data
                 for match in record.combined:
                     for motif in record.combined[match]:
                         self.cur.execute('''INSERT INTO combined \
@@ -499,21 +527,14 @@ to output repeats.''')
                             self.cur.execute('''INSERT INTO combined_components \
                             (records_id, combined_id, motif, length) VALUES \
                             (?,?,?,?)''', (index, combine_index, m[0], m[1]))
+                        if record.primers:
+                            self.storePrimers(index, combine_index, record)
+                        if record.primers \
+                            and (self.pigtailPrimersCheckBox.isChecked() \
+                            or self.tagPrimersCheckBox.isChecked()):
+                            self.storeTaggedPrimers(index, combine_index, record)
                         combine_index += 1
-            
-            if record.primers:
-                if not self.combineLociCheckBox.isChecked():
-                    self.storePrimers(index, msat_index, record)
-                else:
-                    self.storePrimers(index, combine_index, record)
-            
-            # this could be nested in if-then above
-            if record.primers and (self.pigtailPrimersCheckBox.isChecked() or self.tagPrimersCheckBox.isChecked()):
-                if not self.combineLociCheckBox.isChecked():
-                    self.storeTaggedPrimers(index, msat_index, record)
-                else:
-                    self.storeTaggedPrimers(index, combine_index, record)
-            
+                        
             self.conn.commit()
             # we're manually indexing the primary key here
             index += 1
@@ -524,75 +545,136 @@ to output repeats.''')
                 break
         self.pb.setValue(self.infileLength)
     
-    def createPrimersTable(self):
+    def createPrimersTable(self, combined = False):
         '''add tables to the dbase to hold the primers'''
         # create the new primers table
-        query = ('''CREATE TABLE primers (
-            records_id int,
-            msats_id int,
-            primer int,
-            left text,
-            left_sequence text,
-            left_tm real,
-            left_gc real,
-            left_self_end real,
-            left_self_any real,
-            left_hairpin real,
-            left_end_stability real,
-            left_penalty real,
-            right text,
-            right_sequence text,
-            right_tm real,
-            right_gc real,
-            right_self_end real,
-            right_self_any real,
-            right_hairpin real,
-            right_end_stability real,
-            right_penalty real,
-            pair_product_size real,
-            pair_compl_end real,
-            pair_compl_any real,
-            pair_penalty real,
-            FOREIGN KEY(records_id) REFERENCES records(id),
-            FOREIGN KEY(msats_id) REFERENCES microsatellites(id)
-            )''')
+        if not combined:
+            query = ('''CREATE TABLE primers (
+                records_id int,
+                msats_id int,
+                primer int,
+                left text,
+                left_sequence text,
+                left_tm real,
+                left_gc real,
+                left_self_end real,
+                left_self_any real,
+                left_hairpin real,
+                left_end_stability real,
+                left_penalty real,
+                right text,
+                right_sequence text,
+                right_tm real,
+                right_gc real,
+                right_self_end real,
+                right_self_any real,
+                right_hairpin real,
+                right_end_stability real,
+                right_penalty real,
+                pair_product_size real,
+                pair_compl_end real,
+                pair_compl_any real,
+                pair_penalty real,
+                FOREIGN KEY(records_id, msats_id) REFERENCES microsatellites(records_id, id)
+                )''')
+        else:
+            query = ('''CREATE TABLE primers (
+                records_id int,
+                msats_id int,
+                primer int,
+                left text,
+                left_sequence text,
+                left_tm real,
+                left_gc real,
+                left_self_end real,
+                left_self_any real,
+                left_hairpin real,
+                left_end_stability real,
+                left_penalty real,
+                right text,
+                right_sequence text,
+                right_tm real,
+                right_gc real,
+                right_self_end real,
+                right_self_any real,
+                right_hairpin real,
+                right_end_stability real,
+                right_penalty real,
+                pair_product_size real,
+                pair_compl_end real,
+                pair_compl_any real,
+                pair_penalty real,
+                FOREIGN KEY(records_id, msats_id) REFERENCES combined(records_id, id)
+                )''')
         self.cur.execute(query)
         self.conn.commit()
         
-    def createTaggedPrimersTable(self):
+    def createTaggedPrimersTable(self, combined = False):
         '''add tables to the dbase to hold the tagged primers'''
-        # create the new primers table
-        self.cur.execute('''CREATE TABLE tagged (
-            records_id int,
-            msats_id int,
-            primer int,
-            best int,
-            tag text,
-            tagged text,
-            tag_seq test,
-            common text,
-            pigtail_tagged text,
-            pigtail_tag_seq text,
-            pigtail_common text,
-            left text,
-            left_sequence text,
-            left_self_end real,
-            left_self_any real,
-            left_hairpin real,
-            left_penalty real,
-            right text,
-            right_sequence text,
-            right_self_end real,
-            right_self_any real,
-            right_hairpin real,
-            right_penalty real,
-            pair_product_size real,
-            pair_compl_end real,
-            pair_compl_any real,
-            pair_penalty real,
-            FOREIGN KEY(records_id) REFERENCES records(id),
-            FOREIGN KEY(msats_id) REFERENCES microsatellites(id)
-            )''')
+        # create the new tagged primers table
+        if not combined:
+            self.cur.execute('''CREATE TABLE tagged (
+                records_id int,
+                msats_id int,
+                primer int,
+                best int,
+                tag text,
+                tagged text,
+                tag_seq test,
+                common text,
+                pigtail_tagged text,
+                pigtail_tag_seq text,
+                pigtail_common text,
+                left text,
+                left_sequence text,
+                left_self_end real,
+                left_self_any real,
+                left_hairpin real,
+                left_penalty real,
+                right text,
+                right_sequence text,
+                right_self_end real,
+                right_self_any real,
+                right_hairpin real,
+                right_penalty real,
+                pair_product_size real,
+                pair_compl_end real,
+                pair_compl_any real,
+                pair_penalty real,
+                FOREIGN KEY(records_id, msats_id) REFERENCES microsatellites(records_id, id)
+                )''')
+        else:
+            self.cur.execute('''CREATE TABLE tagged (
+                records_id int,
+                msats_id int,
+                primer int,
+                best int,
+                tag text,
+                tagged text,
+                tag_seq test,
+                common text,
+                pigtail_tagged text,
+                pigtail_tag_seq text,
+                pigtail_common text,
+                left text,
+                left_sequence text,
+                left_self_end real,
+                left_self_any real,
+                left_hairpin real,
+                left_penalty real,
+                right text,
+                right_sequence text,
+                right_self_end real,
+                right_self_any real,
+                right_hairpin real,
+                right_penalty real,
+                pair_product_size real,
+                pair_compl_end real,
+                pair_compl_any real,
+                pair_penalty real,
+                FOREIGN KEY(records_id, msats_id) REFERENCES combined(records_id, id)
+                )''')
+            
         self.conn.commit() 
     
     def storePrimers(self, record_id, msat_id, record):
