@@ -411,8 +411,8 @@ to output repeats.''')
             settings.params['PRIMER_PAIR_MAX_COMPL_ANY_TH']     = float(self.primerMaxPairAnySpinBox.value())
             settings.params['PRIMER_MAX_SELF_END_TH']           = float(self.primerMaxSelfEndSpinBox.value())
             settings.params['PRIMER_PAIR_MAX_COMPL_END_TH']     = float(self.primerMaxPairEndSpinBox.value())
-            settings.params['PRIMER_MAX_HAIRPIN']               = float(self.primerMaxSelfHairpinSpinBox.value())
-            settings.params['PRIMER_PAIR_MAX_HAIRPIN']          = float(self.primerMaxPairHairpinSpinBox.value())
+            settings.params['PRIMER_MAX_HAIRPIN_TH']            = float(self.primerMaxSelfHairpinSpinBox.value())
+            settings.params['PRIMER_PAIR_MAX_HAIRPIN_TH']       = float(self.primerMaxPairHairpinSpinBox.value())
             settings.params['PRIMER_MAX_END_STABILITY']         = float(self.primerMaxEndStabilitySpinBox.value())
             if self.primerGCClampCheckBox.isChecked:
                 settings.params['PRIMER_GC_CLAMP']              = 1
