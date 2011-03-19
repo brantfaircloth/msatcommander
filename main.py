@@ -497,17 +497,17 @@ to output repeats.''')
             #QtCore.pyqtRemoveInputHook()
             #pdb.set_trace()
             if not self.combineLociCheckBox.isChecked():
-                for match in record.matches:
-                    for motif in record.matches[match]:
-                        count = (motif[0][1] - motif[0][0])/len(match)
+                for motif in record.matches:
+                    for match in record.matches[motif]:
+                        count = (match[0][1] - match[0][0])/len(motif)
                         self.cur.execute('''INSERT INTO microsatellites \
                             (records_id, id, motif, start, end, preceding, \
                             following, count) VALUES (?,?,?,?,?,?,?,?)''', \
-                            (index, msat_index, match, motif[0][0],motif[0][1], \
-                            motif[1], motif[2], count))
+                            (index, msat_index, motif, match[0][0],match[0][1], \
+                            match[1], match[2], count))
                         self.conn.commit()
                         if record.primers:
-                            self.storePrimers(index, msat_index, record)
+                            self.storePrimers(index, msat_index, record.primers[motif])
                         if record.primers \
                             and (self.pigtailPrimersCheckBox.isChecked() \
                             or self.tagPrimersCheckBox.isChecked()):
@@ -516,29 +516,29 @@ to output repeats.''')
             
             if self.combineLociCheckBox.isChecked():
                 # enter the microsatellite data
-                for match in record.matches:
-                    for motif in record.matches[match]:
-                        count = (motif[0][1] - motif[0][0])/len(match)
+                for motif in record.matches:
+                    for matches in record.matches[motif]:
+                        count = (matches[0][1] - matches[0][0])/len(motif)
                         self.cur.execute('''INSERT INTO microsatellites \
                             (records_id, id, motif, start, end, preceding, \
                             following, count) VALUES (?,?,?,?,?,?,?,?)''', \
-                            (index, msat_index, match, motif[0][0],motif[0][1], \
-                            motif[1], motif[2], count))
+                            (index, msat_index, motif, matches[0][0],matches[0][1], \
+                            matches[1], matches[2], count))
                         msat_index += 1
                 # enter the combined data
-                for match in record.combined:
-                    for motif in record.combined[match]:
+                for motif in record.combined:
+                    for matches in record.combined[motif]:
                         self.cur.execute('''INSERT INTO combined \
                             (records_id, id, motif, start, end, preceding, \
                             following, members) VALUES (?,?,?,?,?,?,?,?)''', \
-                            (index, combine_index, match, motif[0][0], \
-                            motif[0][1], motif[1], motif[2], motif[3]))
-                        for m in motif[4]:
+                            (index, combine_index, motif, matches[0][0], \
+                            matches[0][1], matches[1], matches[2], matches[3]))
+                        for m in matches[4]:
                             self.cur.execute('''INSERT INTO combined_components \
                             (records_id, combined_id, motif, length) VALUES \
                             (?,?,?,?)''', (index, combine_index, m[0], m[1]))
                         if record.primers:
-                            self.storePrimers(index, combine_index, record)
+                            self.storePrimers(index, combine_index, record.primers[motif])
                         if record.primers \
                             and (self.pigtailPrimersCheckBox.isChecked() \
                             or self.tagPrimersCheckBox.isChecked()):
@@ -687,48 +687,48 @@ to output repeats.''')
             
         self.conn.commit() 
     
-    def storePrimers(self, record_id, msat_id, record):
+    def storePrimers(self, record_id, msat_id, motif):
         '''store primers in the database'''
+        #if record.id == "doublet_primer_test_2":
         #QtCore.pyqtRemoveInputHook()
         #pdb.set_trace()
-        for motif, loci in record.primers.iteritems():
-            for primers in loci:
-                for i,p in primers.primers.iteritems():
-                    if i != 'metadata':
-                        # create a copy of the dict, to which we add the
-                        # FOREIGN KEY reference
-                        td = p.copy()
-                        td['RECORD_ID'] = record_id
-                        td['MSAT_ID']   = msat_id
-                        td['PRIMER']    = i
-                        query = ('''INSERT INTO primers VALUES (
-                            :RECORD_ID,
-                            :MSAT_ID,
-                            :PRIMER,
-                            :PRIMER_LEFT,
-                            :PRIMER_LEFT_SEQUENCE,
-                            :PRIMER_LEFT_TM,
-                            :PRIMER_LEFT_GC_PERCENT,
-                            :PRIMER_LEFT_SELF_END_TH,
-                            :PRIMER_LEFT_SELF_ANY_TH,
-                            :PRIMER_LEFT_HAIRPIN_TH,
-                            :PRIMER_LEFT_END_STABILITY,
-                            :PRIMER_LEFT_PENALTY,
-                            :PRIMER_RIGHT,
-                            :PRIMER_RIGHT_SEQUENCE,
-                            :PRIMER_RIGHT_TM,
-                            :PRIMER_RIGHT_GC_PERCENT,
-                            :PRIMER_RIGHT_SELF_END_TH,
-                            :PRIMER_RIGHT_SELF_ANY_TH,
-                            :PRIMER_RIGHT_HAIRPIN_TH,
-                            :PRIMER_RIGHT_END_STABILITY,
-                            :PRIMER_RIGHT_PENALTY,
-                            :PRIMER_PAIR_PRODUCT_SIZE,
-                            :PRIMER_PAIR_COMPL_END_TH,
-                            :PRIMER_PAIR_COMPL_ANY_TH,
-                            :PRIMER_PAIR_PENALTY
-                            )''')
-                        self.cur.execute(query, td)
+        for locus in motif:
+            for i,p in locus.primers.iteritems():
+                if i != 'metadata':
+                    # create a copy of the dict, to which we add the
+                    # FOREIGN KEY reference
+                    td = p.copy()
+                    td['RECORD_ID'] = record_id
+                    td['MSAT_ID']   = msat_id
+                    td['PRIMER']    = i
+                    query = ('''INSERT INTO primers VALUES (
+                        :RECORD_ID,
+                        :MSAT_ID,
+                        :PRIMER,
+                        :PRIMER_LEFT,
+                        :PRIMER_LEFT_SEQUENCE,
+                        :PRIMER_LEFT_TM,
+                        :PRIMER_LEFT_GC_PERCENT,
+                        :PRIMER_LEFT_SELF_END_TH,
+                        :PRIMER_LEFT_SELF_ANY_TH,
+                        :PRIMER_LEFT_HAIRPIN_TH,
+                        :PRIMER_LEFT_END_STABILITY,
+                        :PRIMER_LEFT_PENALTY,
+                        :PRIMER_RIGHT,
+                        :PRIMER_RIGHT_SEQUENCE,
+                        :PRIMER_RIGHT_TM,
+                        :PRIMER_RIGHT_GC_PERCENT,
+                        :PRIMER_RIGHT_SELF_END_TH,
+                        :PRIMER_RIGHT_SELF_ANY_TH,
+                        :PRIMER_RIGHT_HAIRPIN_TH,
+                        :PRIMER_RIGHT_END_STABILITY,
+                        :PRIMER_RIGHT_PENALTY,
+                        :PRIMER_PAIR_PRODUCT_SIZE,
+                        :PRIMER_PAIR_COMPL_END_TH,
+                        :PRIMER_PAIR_COMPL_ANY_TH,
+                        :PRIMER_PAIR_PENALTY
+                        )''')
+                    self.cur.execute(query, td)
         self.conn.commit()
     
     def storeTaggedPrimers(self, record_id, msat_id, record, best=None):
