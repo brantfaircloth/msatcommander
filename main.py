@@ -8,15 +8,17 @@ import operator
 #import multiprocessing
 from Bio import SeqIO
 import msat
+import ConfigParser
 from p3wrapr import primer
 from PyQt4 import QtCore, QtGui
 from ui_msatcommander import Ui_msatcommander
 
 import pdb
 
-class Window(QtGui.QWidget, Ui_msatcommander):
+class Window(QtGui.QWidget, Ui_msatcommander, config = 'msatcommander.conf'):
     '''stuff'''
-    def __init__(self, parent = None):    
+    def __init__(self, parent = None):
+        self.options = ConfigParser.ConfigParser(config)
         QtGui.QWidget.__init__(self, parent)
         self.setupUi(self)
     
@@ -393,9 +395,9 @@ to output repeats.''')
             #pdb.set_trace()
             # setup basic primer design parameters
             settings = primer.Settings()
-            settings.basic(path=os.path.join(os.getcwd(), 'primer3_config/'))
+            settings.basic(path=os.path.join(os.getcwd(), self.options.get('paths', primer3_config)))
             # Update primer3 settings to include the mispriming library
-            settings.params['PRIMER_MISPRIMING_LIBRARY'] = 'misprime_lib_weight'
+            settings.params['PRIMER_MISPRIMING_LIBRARY'] = self.options.get('paths', mispriming)
             # Update the primer3 settings with user choices/defaults:
             settings.params['PRIMER_PRODUCT_SIZE_RANGE'] = str(self.primerProductSizeTextBox.text())
             settings.params['PRIMER_MIN_TM']             = float(self.primerMinTmSpinBox.value())
@@ -427,7 +429,7 @@ to output repeats.''')
         if self.tagPrimersCheckBox.isChecked() or self.pigtailPrimersCheckBox.isChecked():
             # setup the settings for tagging primers
             tag_settings = primer.Settings()
-            tag_settings.reduced(os.path.join(os.getcwd(), 'primer3_config/'), PRIMER_PICK_ANYWAY=1)
+            tag_settings.reduced(self.options.get('paths', primer3_config)), PRIMER_PICK_ANYWAY=1)
             # create the tagged primers table
             if self.combineLociCheckBox.isChecked():
                 self.createTaggedPrimersTable(combined = True)
@@ -456,7 +458,7 @@ to output repeats.''')
                     primers = ()
                     for locations in matches[match]:
                         target = '%s,%s' % (locations[0][0], locations[0][1]-locations[0][0])
-                        primer3 = primer.Primers(binary=os.path.join(os.getcwd(), 'primer3_core'))
+                        primer3 = primer.Primers(binary = self.options.get('paths', primer3))
                         primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
                         if primer3.primers_designed:
                             if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
