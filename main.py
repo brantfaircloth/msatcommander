@@ -3,7 +3,8 @@
 import os
 import sys
 import cPickle
-from pysqlite2 import dbapi2 as sqlite3
+#from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 import operator
 #import multiprocessing
 from Bio import SeqIO
@@ -15,10 +16,17 @@ from ui_msatcommander import Ui_msatcommander
 
 import pdb
 
-class Window(QtGui.QWidget, Ui_msatcommander, config = 'msatcommander.conf'):
+class Window(QtGui.QWidget, Ui_msatcommander):
     '''stuff'''
-    def __init__(self, parent = None):
-        self.options = ConfigParser.ConfigParser(config)
+    def __init__(self, parent = None, config = 'msatcommander.config'):
+        self.config = ConfigParser.ConfigParser()
+        self.config.read(config)
+        self.config.set('paths', 'primer3', \
+                os.path.expanduser(self.config.get('paths', 'primer3').strip("\"")))
+        self.config.set('paths', 'primer3_config', \
+                os.path.expanduser(self.config.get('paths', 'primer3_config').strip("\"") + os.sep))
+        self.config.set('paths', 'mispriming_library', \
+                os.path.expanduser(self.config.get('paths', 'mispriming_library').strip("\"")))
         QtGui.QWidget.__init__(self, parent)
         self.setupUi(self)
     
@@ -395,9 +403,9 @@ to output repeats.''')
             #pdb.set_trace()
             # setup basic primer design parameters
             settings = primer.Settings()
-            settings.basic(path=os.path.join(os.getcwd(), self.options.get('paths', primer3_config)))
+            settings.basic(path = self.config.get('paths', 'primer3_config'))
             # Update primer3 settings to include the mispriming library
-            settings.params['PRIMER_MISPRIMING_LIBRARY'] = self.options.get('paths', mispriming)
+            settings.params['PRIMER_MISPRIMING_LIBRARY'] = self.config.get('paths', 'mispriming_library')
             # Update the primer3 settings with user choices/defaults:
             settings.params['PRIMER_PRODUCT_SIZE_RANGE'] = str(self.primerProductSizeTextBox.text())
             settings.params['PRIMER_MIN_TM']             = float(self.primerMinTmSpinBox.value())
@@ -429,7 +437,7 @@ to output repeats.''')
         if self.tagPrimersCheckBox.isChecked() or self.pigtailPrimersCheckBox.isChecked():
             # setup the settings for tagging primers
             tag_settings = primer.Settings()
-            tag_settings.reduced(self.options.get('paths', primer3_config)), PRIMER_PICK_ANYWAY=1)
+            tag_settings.reduced(self.config.get('paths', 'primer3_config'), PRIMER_PICK_ANYWAY=1)
             # create the tagged primers table
             if self.combineLociCheckBox.isChecked():
                 self.createTaggedPrimersTable(combined = True)
@@ -458,7 +466,7 @@ to output repeats.''')
                     primers = ()
                     for locations in matches[match]:
                         target = '%s,%s' % (locations[0][0], locations[0][1]-locations[0][0])
-                        primer3 = primer.Primers(binary = self.options.get('paths', primer3))
+                        primer3 = primer.Primers(binary = self.config.get('paths', 'primer3'))
                         primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
                         if primer3.primers_designed:
                             if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
@@ -784,7 +792,7 @@ to output repeats.''')
                             AND tagged = ?''',
                             (record_id, msat_id, best[0], best[1], side))
         self.conn.commit()
-        
+    
     def outputWriter(self, out, extension, header, data):
         outpath = os.path.join(str(self.outdir), out)
         f = open(outpath, 'w')
