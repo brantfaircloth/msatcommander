@@ -223,7 +223,7 @@ class Primers:
             print "Unexpected error:", sys.exc_info()[0]
             raise
         #pdb.set_trace()
-        if stderr:
+        if stderr != '':
             stderr = stderr.split('\n')
             for l in stderr:
                 try:
@@ -242,7 +242,7 @@ class Primers:
                         val = float(val)
                     except ValueError:
                         pass
-                    if name in ['PRIMER_LEFT_EXPLAIN', 
+                    if name in ['PRIMER_LEFT_EXPLAIN', 'PRIMER_SALT_DIVALENT',
                     'PRIMER_RIGHT_EXPLAIN', 'PRIMER_PAIR_EXPLAIN']:
                         if 'metadata' not in primers.keys():
                             primers['metadata'] = {name:val}
@@ -255,8 +255,9 @@ class Primers:
                             primers[k] = {name:val}
                         else:
                             primers[k][name] = val
-                except:
-                    raise ValueError, "Cannot parse primer3 stdout.  Ensure primer3 binary is installed."
+                except (ValueError, IndexError):
+                    # skip a bunch of additional metadata stuff we don't need
+                    pass
         else:
             primers = None
         #pdb.set_trace()
