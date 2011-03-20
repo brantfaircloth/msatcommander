@@ -67,6 +67,10 @@ if os.name == 'posix':
         license='GPL',
         app=['main.py'],
         setup_requires=["py2app"],
+	data_files=[
+            ('msat', ['msat/__init__.py','msat/motif.py','msat/seqsearch.py','msat/finder.py']),
+            ('p3wrapr', ['p3wrapr/__init__.py','p3wrapr/primer.py']),
+        ],
         options=dict(py2app=dict(
                 includes=['Bio.SeqIO',
                             'PyQt4',
@@ -77,9 +81,10 @@ if os.name == 'posix':
                 plist = PLIST,
                 packages=[],
                 iconfile='icon/mc.icns',
-                resources=['primer3_long',
+                resources=['../mod-primer3/src/primer3_long',
+			    'msatcommander.config',
                             'misprime_lib_weight',
-                            'primer3_config',
+                            '../mod-primer3/src/primer3_config',
                             'qt.conf'],
                 excludes=[  'Bio.Genbank',
                             'modules.p3wrapr',
@@ -101,7 +106,7 @@ if os.name == 'posix':
     )
     ## post-flight
     # make primer3 core executable
-    print '\n\nSetting primer3_core to executable...'
+    print '\n\nSetting primer3_long to executable...'
     os.chmod(os.path.join(INNARDS, 'Resources','primer3_long'), 0755)
     print 'Removing QtCore_debug and QtGui_debug...'
     for p in [  ( "Frameworks", "QtGui.framework", "Versions", "4", "QtGui_debug" ),
