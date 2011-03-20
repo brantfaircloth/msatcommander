@@ -447,8 +447,6 @@ to output repeats.''')
                 self.createTaggedPrimersTable()
             
         for record in SeqIO.parse(open(self.infile,'rU'), 'fasta'):
-            #QtCore.pyqtRemoveInputHook()
-            #pdb.set_trace()
             # add matches attribute to record
             record.matches = {}
             record.combined = {}
@@ -466,10 +464,27 @@ to output repeats.''')
                     matches = record.matches
                 for match in matches:
                     primers = ()
+                    left_offset, right_offset = 500, 500
                     for locations in matches[match]:
-                        target = '%s,%s' % (locations[0][0], locations[0][1]-locations[0][0])
+                        if locations[0][0] > 500 and (len(record.seq) > (locations[0][1] + 500)):
+                            start = locations[0][0] - left_offset
+                            stop = locations[0][1] + right_offset
+                        elif len(record.seq) > locations[0][1] + 500:
+                            start = 0
+                            stop = locations[0][1] + right_offset
+                        elif locations[0][0] > 500:
+                            start = locations[0][0] - left_offset
+                            stop = len(record.seq)  
+                        else:
+                            start = 0
+                            stop = len(record.seq)
+                        #if record.id == "gi|42495676|gb|AY523013.1|":
+                        #    QtCore.pyqtRemoveInputHook()
+                        #    pdb.set_trace()
+                        seq = record.seq[start:stop]
+                        target = '%s,%s' % (locations[0][0] - start, locations[0][1]-locations[0][0])
                         primer3 = primer.Primers(binary = self.config.get('paths', 'primer3'))
-                        primer3.pick(settings, sequence=str(record.seq), target=target, name = 'primers')
+                        primer3.pick(settings, sequence = str(seq), target=target, name = 'primers')
                         if primer3.primers_designed:
                             if self.pigtailPrimersCheckBox.isChecked() and not self.tagPrimersCheckBox.isChecked():
                                 primer3.pigtail(tag_settings, str(self.pigtailPrimersTagLineEdit.text()))
@@ -482,7 +497,7 @@ to output repeats.''')
                                 if primer3.tagged_good:
                                     if self.pigtailPrimersCheckBox.isChecked():
                                         primer3.pigtail(tag_settings, str(self.pigtailPrimersTagLineEdit.text()))
-                        primers += ((primer3),)
+                        primers += ((primer3, start),)
                     record.primers[match] = primers
             # insert the referential integrity data first
             self.cur.execute('''INSERT INTO records (id, name) VALUES (?,?)''', 
@@ -492,8 +507,8 @@ to output repeats.''')
             # have to run Binary on it, first)
             if self.keepDbaseSequenceRecords.isChecked():
                 rPickle = cPickle.dumps(record, 1)
-                self.cur.execute('''INSERT INTO sequences (id, seq) VALUES (?,?)'''\
-                , (index, sqlite3.Binary(rPickle)))
+                self.cur.execute('''INSERT INTO sequences (id, seq) VALUES (?,?)''', \
+                        (index, sqlite3.Binary(rPickle)))
             
             # go through the motifs and insert them to the dbase
             #QtCore.pyqtRemoveInputHook()
@@ -641,13 +656,11 @@ to output repeats.''')
                 pigtail_tagged text,
                 pigtail_tag_seq text,
                 pigtail_common text,
-                left text,
                 left_sequence text,
                 left_self_end real,
                 left_self_any real,
                 left_hairpin real,
                 left_penalty real,
-                right text,
                 right_sequence text,
                 right_self_end real,
                 right_self_any real,
@@ -672,13 +685,11 @@ to output repeats.''')
                 pigtail_tagged text,
                 pigtail_tag_seq text,
                 pigtail_common text,
-                left text,
                 left_sequence text,
                 left_self_end real,
                 left_self_any real,
                 left_hairpin real,
                 left_penalty real,
-                right text,
                 right_sequence text,
                 right_self_end real,
                 right_self_any real,
@@ -698,7 +709,8 @@ to output repeats.''')
         #QtCore.pyqtRemoveInputHook()
         #pdb.set_trace()
         for locus in motif:
-            for i,p in locus.primers.iteritems():
+            primers, start = locus
+            for i,p in primers.primers.iteritems():
                 if i != 'metadata':
                     # create a copy of the dict, to which we add the
                     # FOREIGN KEY reference
@@ -707,6 +719,11 @@ to output repeats.''')
                     td['MSAT_ID']   = msat_id
                     td['PRIMER']    = i
                     td['DUPLICATE'] = 0
+                    temp_l, dist_l = td['PRIMER_LEFT'].split(',')
+                    temp_r, dist_r = td['PRIMER_RIGHT'].split(',')
+                    td['PRIMER_LEFT'] = "{0},{1}".format(int(temp_l) + start, dist_l)
+                    # fix somewhat kooky primer3 coords; 0 index
+                    td['PRIMER_RIGHT'] = "{0},{1}".format(int(temp_r) + start - int(dist_r) + 1, dist_r)
                     query = ('''INSERT INTO primers VALUES (
                         :RECORD_ID,
                         :MSAT_ID,
@@ -742,8 +759,9 @@ to output repeats.''')
         '''store primers in the database'''
         #for motif, loci in record.primers.iteritems():
         for locus in motif:
-            if locus.tagged_good:
-                for i,p in locus.tagged_good.iteritems():
+            primers, start = locus
+            if primers.tagged_good:
+                for i,p in primers.tagged_good.iteritems():
                     if i != 'metadata':
                         # create a copy of the dict, to which we add the
                         # FOREIGN KEY reference
@@ -752,6 +770,10 @@ to output repeats.''')
                         td['MSAT_ID']   = msat_id
                         td['BEST']      = 0
                         td['PRIMER'], td['TAG'], td['TAGGED'] = i.split('_')
+                        #temp_l, dist_l = td['PRIMER_LEFT'].split(',')
+                        #temp_r, dist_r = td['PRIMER_RIGHT'].split(',')
+                        #td['PRIMER_LEFT'] = "{0},{1}".format(int(temp_l) + start, dist_l)
+                        #td['PRIMER_RIGHT'] = "{0},{1}".format(int(temp_r) + start, dist_r)
                         self.cur.execute('''INSERT INTO tagged VALUES (
                             :RECORD_ID,
                             :MSAT_ID,
@@ -764,13 +786,11 @@ to output repeats.''')
                             :PRIMER_PIGTAILED,
                             :PRIMER_PIGTAIL_TAG,
                             :PRIMER_PIGTAIL_TAG_COMMON_BASES,
-                            :PRIMER_LEFT,
                             :PRIMER_LEFT_SEQUENCE,
                             :PRIMER_LEFT_SELF_END_TH,
                             :PRIMER_LEFT_SELF_ANY_TH,
                             :PRIMER_LEFT_HAIRPIN_TH,
                             :PRIMER_LEFT_PENALTY,
-                            :PRIMER_RIGHT,
                             :PRIMER_RIGHT_SEQUENCE,
                             :PRIMER_RIGHT_SELF_END_TH,
                             :PRIMER_RIGHT_SELF_ANY_TH,
@@ -783,8 +803,8 @@ to output repeats.''')
                             )''', (td))
                 #QtCore.pyqtRemoveInputHook()
                 #pdb.set_trace()
-                if locus.tagged_best:
-                    best = locus.tagged_best.keys()[0].split('_')
+                if primers.tagged_best:
+                    best = primers.tagged_best.keys()[0].split('_')
                     # we're using real side names now
                     if best[2]=='r':
                         side = 'RIGHT'
@@ -992,13 +1012,42 @@ to output repeats.''')
             
             # get the tagged primers
             out = 'msatcommander.tagged.%s' % extension
-            query = '''SELECT records.name, tagged.* 
-                FROM records, tagged, primers WHERE 
-                tagged.records_id = records.id
-                AND tagged.records_id = primers.records_id
-                AND tagged.msats_id = primers.msats_id 
-                AND tagged.primer = primers.primer
-                AND tagged.best = 1
+            query = '''SELECT 
+                records.name,
+                primers.records_id,
+                primers.msats_id,
+                primers.primer,
+                primers.left,
+                tagged.tag,
+                tagged.tagged,
+                tagged.tag_seq,
+                tagged.left_sequence,
+                primers.left_tm,
+                primers.left_gc,
+                primers.left_self_end,
+                primers.left_self_any,
+                primers.left_hairpin,
+                primers.left_end_stability,
+                primers.left_penalty,
+                primers.right,
+                tagged.right_sequence,
+                primers.right_tm,
+                primers.right_gc,
+                primers.right_self_end,
+                primers.right_self_any,
+                primers.right_hairpin,
+                primers.right_end_stability,
+                primers.right_penalty,
+                primers.pair_product_size,
+                primers.pair_compl_end,
+                primers.pair_compl_any,
+                primers.pair_penalty
+                FROM records, primers, tagged WHERE 
+                primers.records_id = records.id 
+                AND primers.records_id = tagged.records_id 
+                AND primers.msats_id = tagged.msats_id 
+                AND primers.primer = tagged.primer 
+                AND tagged.best = 1 
                 AND primers.duplicate = {0}'''
             self.cur.execute(query.format(0))
             non_duplicate = self.cur.fetchall()
