@@ -67,10 +67,6 @@ if os.name == 'posix':
         license='GPL',
         app=['main.py'],
         setup_requires=["py2app"],
-        data_files=[
-            ('msat', ['/Users/bcf/git/brant/msat/__init__.py','/Users/bcf/git/brant/msat/motif.py','/Users/bcf/git/brant/msat/seqsearch.py']),
-            ('p3wrapr', ['/Users/bcf/git/brant/p3wrapr/__init__.py','/Users/bcf/git/brant/p3wrapr/primer.py']),
-        ],
         options=dict(py2app=dict(
                 includes=['Bio.SeqIO',
                             'PyQt4',
