@@ -200,6 +200,8 @@ to output repeats.''')
                     lengths = self.getLengths()
                     self.generateCollection(motifs, lengths)
                     self.readSearchSave()
+                    if self.primersCheckBox.isChecked():
+                        self.checkForDuplicates()
                     self.outputResults()
     
     def getMotifs(self):
@@ -511,7 +513,7 @@ to output repeats.''')
                         if record.primers \
                             and (self.pigtailPrimersCheckBox.isChecked() \
                             or self.tagPrimersCheckBox.isChecked()):
-                            self.storeTaggedPrimers(index, msat_index, record)
+                            self.storeTaggedPrimers(index, msat_index, record.primers[motif])
                         msat_index += 1
             
             if self.combineLociCheckBox.isChecked():
@@ -542,7 +544,7 @@ to output repeats.''')
                         if record.primers \
                             and (self.pigtailPrimersCheckBox.isChecked() \
                             or self.tagPrimersCheckBox.isChecked()):
-                            self.storeTaggedPrimers(index, combine_index, record)
+                            self.storeTaggedPrimers(index, combine_index, record.primers[motif])
                         combine_index += 1
                         
             self.conn.commit()
@@ -585,6 +587,7 @@ to output repeats.''')
                 pair_compl_end real,
                 pair_compl_any real,
                 pair_penalty real,
+                duplicate int,
                 FOREIGN KEY(records_id, msats_id) REFERENCES microsatellites(records_id, id)
                 )''')
         else:
@@ -614,9 +617,12 @@ to output repeats.''')
                 pair_compl_end real,
                 pair_compl_any real,
                 pair_penalty real,
+                duplicate int,
                 FOREIGN KEY(records_id, msats_id) REFERENCES combined(records_id, id)
                 )''')
         self.cur.execute(query)
+        self.cur.execute("CREATE INDEX left_sequence_idx ON primers(left_sequence)")
+        self.cur.execute("CREATE INDEX right_sequence_idx ON primers(right_sequence)")
         self.conn.commit()
         
     def createTaggedPrimersTable(self, combined = False):
@@ -684,7 +690,6 @@ to output repeats.''')
                 pair_penalty real,
                 FOREIGN KEY(records_id, msats_id) REFERENCES combined(records_id, id)
                 )''')
-            
         self.conn.commit() 
     
     def storePrimers(self, record_id, msat_id, motif):
@@ -701,6 +706,7 @@ to output repeats.''')
                     td['RECORD_ID'] = record_id
                     td['MSAT_ID']   = msat_id
                     td['PRIMER']    = i
+                    td['DUPLICATE'] = 0
                     query = ('''INSERT INTO primers VALUES (
                         :RECORD_ID,
                         :MSAT_ID,
@@ -726,88 +732,124 @@ to output repeats.''')
                         :PRIMER_PAIR_PRODUCT_SIZE,
                         :PRIMER_PAIR_COMPL_END_TH,
                         :PRIMER_PAIR_COMPL_ANY_TH,
-                        :PRIMER_PAIR_PENALTY
+                        :PRIMER_PAIR_PENALTY,
+                        :DUPLICATE
                         )''')
                     self.cur.execute(query, td)
         self.conn.commit()
     
-    def storeTaggedPrimers(self, record_id, msat_id, record, best=None):
+    def storeTaggedPrimers(self, record_id, msat_id, motif, best=None):
         '''store primers in the database'''
-        for motif, loci in record.primers.iteritems():
-            for primers in loci:
-                if primers.tagged_good:
-                    for i,p in primers.tagged_good.iteritems():
-                        if i != 'metadata':
-                            # create a copy of the dict, to which we add the
-                            # FOREIGN KEY reference
-                            td = p.copy()
-                            td['RECORD_ID'] = record_id
-                            td['MSAT_ID']   = msat_id
-                            td['BEST']      = 0
-                            td['PRIMER'], td['TAG'], td['TAGGED'] = i.split('_')
-                            self.cur.execute('''INSERT INTO tagged VALUES (
-                                :RECORD_ID,
-                                :MSAT_ID,
-                                :PRIMER,
-                                :BEST,
-                                :TAG,
-                                :PRIMER_TAGGED,
-                                :PRIMER_TAG,
-                                :PRIMER_TAG_COMMON_BASES,
-                                :PRIMER_PIGTAILED,
-                                :PRIMER_PIGTAIL_TAG,
-                                :PRIMER_PIGTAIL_TAG_COMMON_BASES,
-                                :PRIMER_LEFT,
-                                :PRIMER_LEFT_SEQUENCE,
-                                :PRIMER_LEFT_SELF_END_TH,
-                                :PRIMER_LEFT_SELF_ANY_TH,
-                                :PRIMER_LEFT_HAIRPIN_TH,
-                                :PRIMER_LEFT_PENALTY,
-                                :PRIMER_RIGHT,
-                                :PRIMER_RIGHT_SEQUENCE,
-                                :PRIMER_RIGHT_SELF_END_TH,
-                                :PRIMER_RIGHT_SELF_ANY_TH,
-                                :PRIMER_RIGHT_HAIRPIN_TH,
-                                :PRIMER_RIGHT_PENALTY,
-                                :PRIMER_TAG_PRODUCT_SIZE,
-                                :PRIMER_PAIR_COMPL_END_TH,
-                                :PRIMER_PAIR_COMPL_ANY_TH,
-                                :PRIMER_PAIR_PENALTY
-                                )''', (td))
-                    #QtCore.pyqtRemoveInputHook()
-                    #pdb.set_trace()
-                    if primers.tagged_best:
-                        best = primers.tagged_best.keys()[0].split('_')
-                        # we're using real side names now
-                        if best[2]=='r':
-                            side = 'RIGHT'
-                        else:
-                            side = 'LEFT'
-                        self.cur.execute('''UPDATE tagged 
-                            SET best = 1 WHERE 
-                            records_id = ? 
-                            AND msats_id = ?
-                            AND primer = ? 
-                            AND tag = ? 
-                            AND tagged = ?''',
-                            (record_id, msat_id, best[0], best[1], side))
+        #for motif, loci in record.primers.iteritems():
+        for locus in motif:
+            if locus.tagged_good:
+                for i,p in locus.tagged_good.iteritems():
+                    if i != 'metadata':
+                        # create a copy of the dict, to which we add the
+                        # FOREIGN KEY reference
+                        td = p.copy()
+                        td['RECORD_ID'] = record_id
+                        td['MSAT_ID']   = msat_id
+                        td['BEST']      = 0
+                        td['PRIMER'], td['TAG'], td['TAGGED'] = i.split('_')
+                        self.cur.execute('''INSERT INTO tagged VALUES (
+                            :RECORD_ID,
+                            :MSAT_ID,
+                            :PRIMER,
+                            :BEST,
+                            :TAG,
+                            :PRIMER_TAGGED,
+                            :PRIMER_TAG,
+                            :PRIMER_TAG_COMMON_BASES,
+                            :PRIMER_PIGTAILED,
+                            :PRIMER_PIGTAIL_TAG,
+                            :PRIMER_PIGTAIL_TAG_COMMON_BASES,
+                            :PRIMER_LEFT,
+                            :PRIMER_LEFT_SEQUENCE,
+                            :PRIMER_LEFT_SELF_END_TH,
+                            :PRIMER_LEFT_SELF_ANY_TH,
+                            :PRIMER_LEFT_HAIRPIN_TH,
+                            :PRIMER_LEFT_PENALTY,
+                            :PRIMER_RIGHT,
+                            :PRIMER_RIGHT_SEQUENCE,
+                            :PRIMER_RIGHT_SELF_END_TH,
+                            :PRIMER_RIGHT_SELF_ANY_TH,
+                            :PRIMER_RIGHT_HAIRPIN_TH,
+                            :PRIMER_RIGHT_PENALTY,
+                            :PRIMER_TAG_PRODUCT_SIZE,
+                            :PRIMER_PAIR_COMPL_END_TH,
+                            :PRIMER_PAIR_COMPL_ANY_TH,
+                            :PRIMER_PAIR_PENALTY
+                            )''', (td))
+                #QtCore.pyqtRemoveInputHook()
+                #pdb.set_trace()
+                if locus.tagged_best:
+                    best = locus.tagged_best.keys()[0].split('_')
+                    # we're using real side names now
+                    if best[2]=='r':
+                        side = 'RIGHT'
+                    else:
+                        side = 'LEFT'
+                    self.cur.execute('''UPDATE tagged 
+                        SET best = 1 WHERE 
+                        records_id = ? 
+                        AND msats_id = ?
+                        AND primer = ? 
+                        AND tag = ? 
+                        AND tagged = ?''',
+                        (record_id, msat_id, best[0], best[1], side))
         self.conn.commit()
     
-    def outputWriter(self, out, extension, header, data):
+    def getDupePrimers(self):
+        """return the primer sequence of potential dupe primers"""
+        query = "SELECT primers.left_sequence, primers.right_sequence "\
+                +"FROM primers GROUP BY primers.left_sequence, "\
+                +"primers.right_sequence HAVING (COUNT(primers.left_sequence) > 1 "\
+                +"and COUNT(primers.right_sequence) > 1)"
+        self.cur.execute(query)
+        return self.cur.fetchall()
+
+    def checkForDuplicates(self):
+        # set value for left dupes
+        dupes = self.getDupePrimers()
+        for left, right in dupes:
+            self.cur.execute('''UPDATE primers SET duplicate = 1 WHERE (left_sequence = ? AND right_sequence = ?)''', (left, right))
+        self.conn.commit()
+        return
+    
+    def csvWriter(self, f, data):
+        for row in data:
+            s = ','.join(['\"{0}\"'.format(str(x)) for x in row])
+            f.write('{0}\n'.format(s))
+    
+    def tdtWriter(self, f, data):
+        for row in data:
+            s = '\t'.join([str(x) for x in row])
+            f.write('{0}\n'.format(s))
+        
+    def outputWriter(self, out, extension, header, data, duplicate_data = None):
         outpath = os.path.join(str(self.outdir), out)
         f = open(outpath, 'w')
         if extension == 'csv':
             h = ','.join(['\"{0}\"'.format(str(x)) for x in header])
             f.write('{0}\n'.format(h)) 
-            for d in data:
-                s = ','.join(['\"{0}\"'.format(str(x)) for x in d])
-                f.write('{0}\n'.format(s))
+            if data:
+                self.csvWriter(f, data)
+            if duplicate_data:
+                spacer = ',' * len(duplicate_data[0])
+                f.write('{0}\n'.format(spacer))
+                f.write('Potentially duplicated primers:{0}\n'.format(spacer))
+                self.csvWriter(f, duplicate_data)
         elif extension == 'tdt':
             h = '\t'.join([str(x) for x in header])
             f.write('{0}\n'.format(h))
-            for d in data:
-                s = '\t'.join([str(x) for x in d])
-                f.write('{0}\n'.format(s))
+            if data:
+                self.tdtWriter(f, data)
+            if duplicate_data:
+                spacer = '\t' * len(duplicate_data[0])
+                f.write('{0}\n'.format(spacer))
+                f.write('Potentially duplicated primers:{0}\n'.format(spacer))
+                self.tdtWriter(f, duplicate_data)
         f.close()
     
     def outputResults(self):
@@ -850,12 +892,18 @@ to output repeats.''')
             # get the best unlabelled primers
             self.cur.execute('''SELECT records.name, primers.* from 
                 records, primers where records.id = primers.records_id and 
-                primers.primer = 0''')
+                primers.primer = 0 and primers.duplicate = 0''')
             header = [_[0] for _ in self.cur.description]
             if self.combineLociCheckBox.isChecked():
                 header[2] = 'combined_id'
-            data = self.cur.fetchall()
-            self.outputWriter(out, extension, header, data)
+            non_duplicate = self.cur.fetchall()
+            # get potential duplicates
+            self.cur.execute('''SELECT records.name, primers.* from 
+                records, primers where records.id = primers.records_id and 
+                primers.primer = 0 and primers.duplicate = 1''')
+            duplicate = self.cur.fetchall()
+            self.outputWriter(out, extension, header, non_duplicate, duplicate)
+            
         
         # if we designed primers, and we pigtailed primers, and we want the
         # untagged primer data
@@ -901,17 +949,20 @@ to output repeats.''')
                 FROM records, primers, tagged WHERE 
                 primers.records_id = records.id 
                 AND primers.records_id = tagged.records_id 
-                AND primers.msats_id = tagged.msats_id
-                AND primers.primer = tagged.primer
-                AND tagged.best = 1'''
-            self.cur.execute(query)
+                AND primers.msats_id = tagged.msats_id 
+                AND primers.primer = tagged.primer 
+                AND tagged.best = 1 
+                AND primers.duplicate = {0}'''
+            self.cur.execute(query.format(0))
             #QtCore.pyqtRemoveInputHook()
             #pdb.set_trace()
             header = [_[0] for _ in self.cur.description]
             if self.combineLociCheckBox.isChecked():
                 header[2] = 'combined_id'
-            data = self.cur.fetchall()
-            self.outputWriter(out, extension, header, data)
+            non_duplicate = self.cur.fetchall()
+            self.cur.execute(query.format(1))
+            duplicate = self.cur.fetchall()
+            self.outputWriter(out, extension, header, non_duplicate, duplicate)
         
         # if we designed primers and we want to ouput tagged primers - they
         # may or may not be pigtailed
@@ -928,24 +979,35 @@ to output repeats.''')
                 AND primers.records_id = tagged.records_id
                 AND primers.msats_id = tagged.msats_id
                 AND primers.primer = tagged.primer
-                AND tagged.best = 1'''
-            self.cur.execute(query)
+                AND tagged.best = 1
+                AND primers.duplicate = {0}'''
+            self.cur.execute(query.format(0))
+            non_duplicate = self.cur.fetchall()
+            self.cur.execute(query.format(1))
+            duplicate = self.cur.fetchall()
             header = [_[0] for _ in self.cur.description]
             if self.combineLociCheckBox.isChecked():
                 header[2] = 'combined_id'
-            data = self.cur.fetchall()
-            self.outputWriter(out, extension, header, data)
+            self.outputWriter(out, extension, header, non_duplicate, duplicate)
+            
             # get the tagged primers
             out = 'msatcommander.tagged.%s' % extension
-            self.cur.execute('''SELECT records.name, tagged.* FROM records,
-                tagged WHERE 
-                tagged.records_id = records.id 
-                AND tagged.best = 1''')
+            query = '''SELECT records.name, tagged.* 
+                FROM records, tagged, primers WHERE 
+                tagged.records_id = records.id
+                AND tagged.records_id = primers.records_id
+                AND tagged.msats_id = primers.msats_id 
+                AND tagged.primer = primers.primer
+                AND tagged.best = 1
+                AND primers.duplicate = {0}'''
+            self.cur.execute(query.format(0))
+            non_duplicate = self.cur.fetchall()
+            self.cur.execute(query.format(1))
+            duplicate = self.cur.fetchall()
             header = [_[0] for _ in self.cur.description]
             if self.combineLociCheckBox.isChecked():
                 header[2] = 'combined_id'
-            data = self.cur.fetchall()
-            self.outputWriter(out, extension, header, data)
+            self.outputWriter(out, extension, header, non_duplicate, duplicate)
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
