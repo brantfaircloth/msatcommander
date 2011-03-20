@@ -38,12 +38,12 @@ except:
     pass
 print 'Building app...'
 
-VER = '1.0.3-alpha'
+VER = '1.0.4-beta'
 NAME = 'msatcommander'
 APPNAME = '%s-%s' % (NAME, VER)
 FULLAPPNAME = '%s.app' % APPNAME
 AUTHOR = 'Brant Faircloth'
-YEAR = 2010
+YEAR = 2011
 
 PLIST = dict(CFBundleName = APPNAME,
              CFBundleShortVersionString = VER,
@@ -81,7 +81,7 @@ if os.name == 'posix':
                 plist = PLIST,
                 packages=[],
                 iconfile='icon/mc.icns',
-                resources=['primer3_core',
+                resources=['primer3_long',
                             'misprime_lib_weight',
                             'primer3_config',
                             'qt.conf'],
@@ -106,7 +106,7 @@ if os.name == 'posix':
     ## post-flight
     # make primer3 core executable
     print '\n\nSetting primer3_core to executable...'
-    os.chmod(os.path.join(INNARDS, 'Resources','primer3_core'), 0755)
+    os.chmod(os.path.join(INNARDS, 'Resources','primer3_long'), 0755)
     print 'Removing QtCore_debug and QtGui_debug...'
     for p in [  ( "Frameworks", "QtGui.framework", "Versions", "4", "QtGui_debug" ),
                 ( "Frameworks", "QtGui.framework", "QtGui_debug"),

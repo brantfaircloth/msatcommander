@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>msatcommander-1.0.0-alpha</string>
+   <string>msatcommander-1.0.4-beta</string>
   </property>
   <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
