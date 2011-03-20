@@ -2,19 +2,17 @@
 
 import os
 import sys
+import msat
 import cPickle
-#from pysqlite2 import dbapi2 as sqlite3
 import sqlite3
 import operator
-#import multiprocessing
-from Bio import SeqIO
-import msat
 import ConfigParser
+from Bio import SeqIO
 from p3wrapr import primer
 from PyQt4 import QtCore, QtGui
 from ui_msatcommander import Ui_msatcommander
 
-import pdb
+#import pdb
 
 class Window(QtGui.QWidget, Ui_msatcommander):
     '''stuff'''
