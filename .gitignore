@@ -8,5 +8,5 @@ build/*
 dist/*
 output/*
 testing/*
-primer3_core
+primer3_long
 primer3_config/
