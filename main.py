@@ -16,7 +16,7 @@ from ui_msatcommander import Ui_msatcommander
 
 class Window(QtGui.QWidget, Ui_msatcommander):
     '''stuff'''
-    def __init__(self, parent = None, config = 'msatcommander.config'):
+    def __init__(self, parent = None, config = 'msatcommander.conf'):
         self.config = ConfigParser.ConfigParser()
         self.config.read(config)
         self.config.set('paths', 'primer3', \
