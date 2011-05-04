@@ -10,3 +10,5 @@ output/*
 testing/*
 primer3_long
 primer3_config/
+doc/
+setup.py.old
