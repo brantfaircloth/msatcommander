@@ -12,7 +12,7 @@ from p3wrapr import primer
 from PyQt4 import QtCore, QtGui
 from ui_msatcommander import Ui_msatcommander
 
-#import pdb
+import pdb
 
 class Window(QtGui.QWidget, Ui_msatcommander):
     '''stuff'''
@@ -521,12 +521,17 @@ to output repeats.''')
                             (index, msat_index, motif, match[0][0],match[0][1], \
                             match[1], match[2], count))
                         self.conn.commit()
+                        #QtCore.pyqtRemoveInputHook()
+                        #pdb.set_trace()
+                        # fixing bug in primer number reporting reported by Jarek Byrk
+                        # Max Planck Institute for Evolutionary Biology
+                        locus_specific_primer = record.primers[motif][record.matches[motif].index(match)]
                         if record.primers:
-                            self.storePrimers(index, msat_index, record.primers[motif])
+                            self.storePrimers(index, msat_index, locus_specific_primer)
                         if record.primers \
                             and (self.pigtailPrimersCheckBox.isChecked() \
                             or self.tagPrimersCheckBox.isChecked()):
-                            self.storeTaggedPrimers(index, msat_index, record.primers[motif])
+                            self.storeTaggedPrimers(index, msat_index, locus_specific_primer)
                         msat_index += 1
             
             if self.combineLociCheckBox.isChecked():
@@ -552,12 +557,14 @@ to output repeats.''')
                             self.cur.execute('''INSERT INTO combined_components \
                             (records_id, combined_id, motif, length) VALUES \
                             (?,?,?,?)''', (index, combine_index, m[0], m[1]))
+                        # ensure the same bug doesn't hit us as above:
+                        locus_specific_primer = record.primers[motif][record.combined[motif].index(match)]
                         if record.primers:
-                            self.storePrimers(index, combine_index, record.primers[motif])
+                            self.storePrimers(index, combine_index, locus_specific_primer)
                         if record.primers \
                             and (self.pigtailPrimersCheckBox.isChecked() \
                             or self.tagPrimersCheckBox.isChecked()):
-                            self.storeTaggedPrimers(index, combine_index, record.primers[motif])
+                            self.storeTaggedPrimers(index, combine_index, locus_specific_primer)
                         combine_index += 1
                         
             self.conn.commit()
@@ -701,121 +708,121 @@ to output repeats.''')
                 )''')
         self.conn.commit() 
     
-    def storePrimers(self, record_id, msat_id, motif):
+    def storePrimers(self, record_id, msat_id, locus):
         '''store primers in the database'''
         #if record.id == "doublet_primer_test_2":
         #QtCore.pyqtRemoveInputHook()
         #pdb.set_trace()
-        for locus in motif:
-            primers, start = locus
-            for i,p in primers.primers.iteritems():
+        #for locus in motif:
+        primers, start = locus
+        for i,p in primers.primers.iteritems():
+            if i != 'metadata':
+                # create a copy of the dict, to which we add the
+                # FOREIGN KEY reference
+                td = p.copy()
+                td['RECORD_ID'] = record_id
+                td['MSAT_ID']   = msat_id
+                td['PRIMER']    = i
+                td['DUPLICATE'] = 0
+                temp_l, dist_l = td['PRIMER_LEFT'].split(',')
+                temp_r, dist_r = td['PRIMER_RIGHT'].split(',')
+                td['PRIMER_LEFT'] = "{0},{1}".format(int(temp_l) + start, dist_l)
+                # fix somewhat kooky primer3 coords; 0 index
+                td['PRIMER_RIGHT'] = "{0},{1}".format(int(temp_r) + start - int(dist_r) + 1, dist_r)
+                query = ('''INSERT INTO primers VALUES (
+                    :RECORD_ID,
+                    :MSAT_ID,
+                    :PRIMER,
+                    :PRIMER_LEFT,
+                    :PRIMER_LEFT_SEQUENCE,
+                    :PRIMER_LEFT_TM,
+                    :PRIMER_LEFT_GC_PERCENT,
+                    :PRIMER_LEFT_SELF_END_TH,
+                    :PRIMER_LEFT_SELF_ANY_TH,
+                    :PRIMER_LEFT_HAIRPIN_TH,
+                    :PRIMER_LEFT_END_STABILITY,
+                    :PRIMER_LEFT_PENALTY,
+                    :PRIMER_RIGHT,
+                    :PRIMER_RIGHT_SEQUENCE,
+                    :PRIMER_RIGHT_TM,
+                    :PRIMER_RIGHT_GC_PERCENT,
+                    :PRIMER_RIGHT_SELF_END_TH,
+                    :PRIMER_RIGHT_SELF_ANY_TH,
+                    :PRIMER_RIGHT_HAIRPIN_TH,
+                    :PRIMER_RIGHT_END_STABILITY,
+                    :PRIMER_RIGHT_PENALTY,
+                    :PRIMER_PAIR_PRODUCT_SIZE,
+                    :PRIMER_PAIR_COMPL_END_TH,
+                    :PRIMER_PAIR_COMPL_ANY_TH,
+                    :PRIMER_PAIR_PENALTY,
+                    :DUPLICATE
+                    )''')
+                self.cur.execute(query, td)
+        self.conn.commit()
+    
+    def storeTaggedPrimers(self, record_id, msat_id, locus, best=None):
+        '''store primers in the database'''
+        #for motif, loci in record.primers.iteritems():
+        #for locus in motif:
+        primers, start = locus
+        if primers.tagged_good:
+            for i,p in primers.tagged_good.iteritems():
                 if i != 'metadata':
                     # create a copy of the dict, to which we add the
                     # FOREIGN KEY reference
                     td = p.copy()
                     td['RECORD_ID'] = record_id
                     td['MSAT_ID']   = msat_id
-                    td['PRIMER']    = i
-                    td['DUPLICATE'] = 0
-                    temp_l, dist_l = td['PRIMER_LEFT'].split(',')
-                    temp_r, dist_r = td['PRIMER_RIGHT'].split(',')
-                    td['PRIMER_LEFT'] = "{0},{1}".format(int(temp_l) + start, dist_l)
-                    # fix somewhat kooky primer3 coords; 0 index
-                    td['PRIMER_RIGHT'] = "{0},{1}".format(int(temp_r) + start - int(dist_r) + 1, dist_r)
-                    query = ('''INSERT INTO primers VALUES (
+                    td['BEST']      = 0
+                    td['PRIMER'], td['TAG'], td['TAGGED'] = i.split('_')
+                    #temp_l, dist_l = td['PRIMER_LEFT'].split(',')
+                    #temp_r, dist_r = td['PRIMER_RIGHT'].split(',')
+                    #td['PRIMER_LEFT'] = "{0},{1}".format(int(temp_l) + start, dist_l)
+                    #td['PRIMER_RIGHT'] = "{0},{1}".format(int(temp_r) + start, dist_r)
+                    self.cur.execute('''INSERT INTO tagged VALUES (
                         :RECORD_ID,
                         :MSAT_ID,
                         :PRIMER,
-                        :PRIMER_LEFT,
+                        :BEST,
+                        :TAG,
+                        :PRIMER_TAGGED,
+                        :PRIMER_TAG,
+                        :PRIMER_TAG_COMMON_BASES,
+                        :PRIMER_PIGTAILED,
+                        :PRIMER_PIGTAIL_TAG,
+                        :PRIMER_PIGTAIL_TAG_COMMON_BASES,
                         :PRIMER_LEFT_SEQUENCE,
-                        :PRIMER_LEFT_TM,
-                        :PRIMER_LEFT_GC_PERCENT,
                         :PRIMER_LEFT_SELF_END_TH,
                         :PRIMER_LEFT_SELF_ANY_TH,
                         :PRIMER_LEFT_HAIRPIN_TH,
-                        :PRIMER_LEFT_END_STABILITY,
                         :PRIMER_LEFT_PENALTY,
-                        :PRIMER_RIGHT,
                         :PRIMER_RIGHT_SEQUENCE,
-                        :PRIMER_RIGHT_TM,
-                        :PRIMER_RIGHT_GC_PERCENT,
                         :PRIMER_RIGHT_SELF_END_TH,
                         :PRIMER_RIGHT_SELF_ANY_TH,
                         :PRIMER_RIGHT_HAIRPIN_TH,
-                        :PRIMER_RIGHT_END_STABILITY,
                         :PRIMER_RIGHT_PENALTY,
-                        :PRIMER_PAIR_PRODUCT_SIZE,
+                        :PRIMER_TAG_PRODUCT_SIZE,
                         :PRIMER_PAIR_COMPL_END_TH,
                         :PRIMER_PAIR_COMPL_ANY_TH,
-                        :PRIMER_PAIR_PENALTY,
-                        :DUPLICATE
-                        )''')
-                    self.cur.execute(query, td)
-        self.conn.commit()
-    
-    def storeTaggedPrimers(self, record_id, msat_id, motif, best=None):
-        '''store primers in the database'''
-        #for motif, loci in record.primers.iteritems():
-        for locus in motif:
-            primers, start = locus
-            if primers.tagged_good:
-                for i,p in primers.tagged_good.iteritems():
-                    if i != 'metadata':
-                        # create a copy of the dict, to which we add the
-                        # FOREIGN KEY reference
-                        td = p.copy()
-                        td['RECORD_ID'] = record_id
-                        td['MSAT_ID']   = msat_id
-                        td['BEST']      = 0
-                        td['PRIMER'], td['TAG'], td['TAGGED'] = i.split('_')
-                        #temp_l, dist_l = td['PRIMER_LEFT'].split(',')
-                        #temp_r, dist_r = td['PRIMER_RIGHT'].split(',')
-                        #td['PRIMER_LEFT'] = "{0},{1}".format(int(temp_l) + start, dist_l)
-                        #td['PRIMER_RIGHT'] = "{0},{1}".format(int(temp_r) + start, dist_r)
-                        self.cur.execute('''INSERT INTO tagged VALUES (
-                            :RECORD_ID,
-                            :MSAT_ID,
-                            :PRIMER,
-                            :BEST,
-                            :TAG,
-                            :PRIMER_TAGGED,
-                            :PRIMER_TAG,
-                            :PRIMER_TAG_COMMON_BASES,
-                            :PRIMER_PIGTAILED,
-                            :PRIMER_PIGTAIL_TAG,
-                            :PRIMER_PIGTAIL_TAG_COMMON_BASES,
-                            :PRIMER_LEFT_SEQUENCE,
-                            :PRIMER_LEFT_SELF_END_TH,
-                            :PRIMER_LEFT_SELF_ANY_TH,
-                            :PRIMER_LEFT_HAIRPIN_TH,
-                            :PRIMER_LEFT_PENALTY,
-                            :PRIMER_RIGHT_SEQUENCE,
-                            :PRIMER_RIGHT_SELF_END_TH,
-                            :PRIMER_RIGHT_SELF_ANY_TH,
-                            :PRIMER_RIGHT_HAIRPIN_TH,
-                            :PRIMER_RIGHT_PENALTY,
-                            :PRIMER_TAG_PRODUCT_SIZE,
-                            :PRIMER_PAIR_COMPL_END_TH,
-                            :PRIMER_PAIR_COMPL_ANY_TH,
-                            :PRIMER_PAIR_PENALTY
-                            )''', (td))
-                #QtCore.pyqtRemoveInputHook()
-                #pdb.set_trace()
-                if primers.tagged_best:
-                    best = primers.tagged_best.keys()[0].split('_')
-                    # we're using real side names now
-                    if best[2]=='r':
-                        side = 'RIGHT'
-                    else:
-                        side = 'LEFT'
-                    self.cur.execute('''UPDATE tagged 
-                        SET best = 1 WHERE 
-                        records_id = ? 
-                        AND msats_id = ?
-                        AND primer = ? 
-                        AND tag = ? 
-                        AND tagged = ?''',
-                        (record_id, msat_id, best[0], best[1], side))
+                        :PRIMER_PAIR_PENALTY
+                        )''', (td))
+            #QtCore.pyqtRemoveInputHook()
+            #pdb.set_trace()
+            if primers.tagged_best:
+                best = primers.tagged_best.keys()[0].split('_')
+                # we're using real side names now
+                if best[2]=='r':
+                    side = 'RIGHT'
+                else:
+                    side = 'LEFT'
+                self.cur.execute('''UPDATE tagged 
+                    SET best = 1 WHERE 
+                    records_id = ? 
+                    AND msats_id = ?
+                    AND primer = ? 
+                    AND tag = ? 
+                    AND tagged = ?''',
+                    (record_id, msat_id, best[0], best[1], side))
         self.conn.commit()
     
     def getDupePrimers(self):
@@ -921,7 +928,6 @@ to output repeats.''')
                 primers.primer = 0 and primers.duplicate = 1''')
             duplicate = self.cur.fetchall()
             self.outputWriter(out, extension, header, non_duplicate, duplicate)
-            
         
         # if we designed primers, and we pigtailed primers, and we want the
         # untagged primer data
@@ -1007,7 +1013,6 @@ to output repeats.''')
             if self.combineLociCheckBox.isChecked():
                 header[2] = 'combined_id'
             self.outputWriter(out, extension, header, non_duplicate, duplicate)
-            
             # get the tagged primers
             out = 'msatcommander.tagged.%s' % extension
             query = '''SELECT 
