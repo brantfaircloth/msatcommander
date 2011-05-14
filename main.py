@@ -542,7 +542,7 @@ to output repeats.''')
                         self.cur.execute('''INSERT INTO microsatellites \
                             (records_id, id, motif, start, end, preceding, \
                             following, count) VALUES (?,?,?,?,?,?,?,?)''', \
-                            (index, msat_index, matches[-1], matches[0][0],matches[0][1], \
+                            (index, msat_index, motif, matches[0][0],matches[0][1], \
                             matches[1], matches[2], count))
                         msat_index += 1
                 # enter the combined data
@@ -551,7 +551,7 @@ to output repeats.''')
                         self.cur.execute('''INSERT INTO combined \
                             (records_id, id, motif, start, end, preceding, \
                             following, members) VALUES (?,?,?,?,?,?,?,?)''', \
-                            (index, combine_index, motif, matches[0][0], \
+                            (index, combine_index, matches[-1], matches[0][0], \
                             matches[0][1], matches[1], matches[2], matches[3]))
                         for m in matches[4]:
                             self.cur.execute('''INSERT INTO combined_components \
