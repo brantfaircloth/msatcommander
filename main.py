@@ -12,7 +12,7 @@ from p3wrapr import primer
 from PyQt4 import QtCore, QtGui
 from ui_msatcommander import Ui_msatcommander
 
-#import pdb
+import pdb
 
 class Window(QtGui.QWidget, Ui_msatcommander):
     '''stuff'''
@@ -358,7 +358,7 @@ to output repeats.''')
                 if not included:
                     temp_combined.append([i])
         # re-key
-        for group in temp_combined:
+        for key, group in enumerate(temp_combined):
             motifs = []
             if len(group) > 1:
                 gs = group[0][2]
@@ -383,7 +383,7 @@ to output repeats.''')
                 name += '%s(%s)%s' % (member[0], length, spacer)
                 motifs.append([member[0],length])
                 member_count += 1
-            record.combined[name] = (((gs, ge), gp, gf, member_count, motifs),)
+            record.combined[key] = (((gs, ge), gp, gf, member_count, motifs, name),)
             #QtCore.pyqtRemoveInputHook()
             #pdb.set_trace()
         return record
@@ -542,12 +542,12 @@ to output repeats.''')
                         self.cur.execute('''INSERT INTO microsatellites \
                             (records_id, id, motif, start, end, preceding, \
                             following, count) VALUES (?,?,?,?,?,?,?,?)''', \
-                            (index, msat_index, motif, matches[0][0],matches[0][1], \
+                            (index, msat_index, matches[-1], matches[0][0],matches[0][1], \
                             matches[1], matches[2], count))
                         msat_index += 1
                 # enter the combined data
                 for motif in record.combined:
-                    for matches in record.combined[motif]:
+                    for pos, matches in enumerate(record.combined[motif]):
                         self.cur.execute('''INSERT INTO combined \
                             (records_id, id, motif, start, end, preceding, \
                             following, members) VALUES (?,?,?,?,?,?,?,?)''', \
@@ -558,7 +558,9 @@ to output repeats.''')
                             (records_id, combined_id, motif, length) VALUES \
                             (?,?,?,?)''', (index, combine_index, m[0], m[1]))
                         # ensure the same bug doesn't hit us as above:
-                        locus_specific_primer = record.primers[motif][record.combined[motif].index(match)]
+                        #QtCore.pyqtRemoveInputHook()
+                        #pdb.set_trace()
+                        locus_specific_primer = record.primers[motif][pos]
                         if record.primers:
                             self.storePrimers(index, combine_index, locus_specific_primer)
                         if record.primers \
