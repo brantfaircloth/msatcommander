@@ -397,7 +397,7 @@ class Ui_msatcommander(object):
         msatcommander.setTabOrder(self.customTagCheckBox, self.hexanucSpinBox)
 
     def retranslateUi(self, msatcommander):
-        msatcommander.setWindowTitle(QtGui.QApplication.translate("msatcommander", "msatcommander-1.0.6-beta", None, QtGui.QApplication.UnicodeUTF8))
+        msatcommander.setWindowTitle(QtGui.QApplication.translate("msatcommander", "msatcommander-1.0.8-beta", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox.setTitle(QtGui.QApplication.translate("msatcommander", "Search Parameters", None, QtGui.QApplication.UnicodeUTF8))
         self.dinucCheckBox.setText(QtGui.QApplication.translate("msatcommander", "Dinucleotide", None, QtGui.QApplication.UnicodeUTF8))
         self.pentanucCheckBox.setText(QtGui.QApplication.translate("msatcommander", "Pentanucleotide", None, QtGui.QApplication.UnicodeUTF8))

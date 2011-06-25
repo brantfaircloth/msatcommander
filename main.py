@@ -31,7 +31,7 @@ class Window(QtGui.QWidget, Ui_msatcommander):
     def open(self):
         '''get the input filename - mutiple file input is not supported'''
         self.infile = QtGui.QFileDialog.getOpenFileName(self,\
-            "Select Fasta to Search",os.path.expanduser('~'), "Fasta (*.fsa *.fa *.fasta)")
+            "Select Fasta to Search",os.path.expanduser('~'), "Fasta (*.fsa *.fa *.fasta *.fna)")
         # ==================
         # = DEBUG EASIFIER =
         # ==================
@@ -525,13 +525,14 @@ to output repeats.''')
                         #pdb.set_trace()
                         # fixing bug in primer number reporting reported by Jarek Byrk
                         # Max Planck Institute for Evolutionary Biology
-                        locus_specific_primer = record.primers[motif][record.matches[motif].index(match)]
-                        if record.primers:
-                            self.storePrimers(index, msat_index, locus_specific_primer)
-                        if record.primers \
-                            and (self.pigtailPrimersCheckBox.isChecked() \
-                            or self.tagPrimersCheckBox.isChecked()):
-                            self.storeTaggedPrimers(index, msat_index, locus_specific_primer)
+                        if self.designPrimersCheckBox.isChecked():
+                            locus_specific_primer = record.primers[motif][record.matches[motif].index(match)]
+                            if record.primers:
+                                self.storePrimers(index, msat_index, locus_specific_primer)
+                            if record.primers \
+                                and (self.pigtailPrimersCheckBox.isChecked() \
+                                or self.tagPrimersCheckBox.isChecked()):
+                                self.storeTaggedPrimers(index, msat_index, locus_specific_primer)
                         msat_index += 1
             
             if self.combineLociCheckBox.isChecked():
@@ -560,13 +561,14 @@ to output repeats.''')
                         # ensure the same bug doesn't hit us as above:
                         #QtCore.pyqtRemoveInputHook()
                         #pdb.set_trace()
-                        locus_specific_primer = record.primers[motif][pos]
-                        if record.primers:
-                            self.storePrimers(index, combine_index, locus_specific_primer)
-                        if record.primers \
-                            and (self.pigtailPrimersCheckBox.isChecked() \
-                            or self.tagPrimersCheckBox.isChecked()):
-                            self.storeTaggedPrimers(index, combine_index, locus_specific_primer)
+                        if self.designPrimersCheckBox.isChecked():
+                            locus_specific_primer = record.primers[motif][pos]
+                            if record.primers:
+                                self.storePrimers(index, combine_index, locus_specific_primer)
+                            if record.primers \
+                                and (self.pigtailPrimersCheckBox.isChecked() \
+                                or self.tagPrimersCheckBox.isChecked()):
+                                self.storeTaggedPrimers(index, combine_index, locus_specific_primer)
                         combine_index += 1
                         
             self.conn.commit()
